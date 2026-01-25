@@ -1,5 +1,6 @@
 MeuGerenciador:
     TelaInicio:
+    CadastroCliente:
     GerarServico:
 
 
@@ -17,11 +18,13 @@ MeuGerenciador:
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.70}
+            on_release: root.manager.current = 'cadastro_cliente'
         Button:
             text: 'GERAR SERVIÇO'
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.60}
+            on_release: root.manager.current = 'gerar_servico'
         Button:
             text: 'SERVIÇOS NÃO FINALIZADOS'
             size_hint: 0.8, 0.08
@@ -32,4 +35,119 @@ MeuGerenciador:
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.40}
+        Button:
+            text: 'SAIR'
+            size_hint: 0.3, 0.08
+            font_size: '18sp'
+            background_color: 1, 0, 0, 1
+            pos_hint: {'center_x': 0.5, 'y': 0.15}
+            on_release: app.fechar_aplicativo()
+
+
+<CadastroCliente>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    name: 'cadastro_cliente'
+    FloatLayout:
+        Label:
+            id: letreiro_cadastro_cliente
+            text: 'CADASTRO DE CLIENTE'
+            size_hint: None, None
+            color: 0, 0, 0, 1
+            pos_hint: {'center_x': 0.5, 'y': 0.80}
+        TextInput:
+            id: nome_cliente
+            hint_text: 'NOME DO CLIENTE'
+            multiline: False
+            size_hint: 0.7, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.7}
+        TextInput:
+            id: numero_contato
+            hint_text: 'NÚMERO PARA CONTATO'
+            multiline: False
+            size_hint: 0.7, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.6}
+            input_filter: 'int'
+            input_type: 'number'
+            on_text: if not self.text.isdigit(): self.text = ''.join(filter(str.isdigit, self.text))
+        Button:
+            text: 'CADASTRAR CLIENTE'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.5}
+        Button:
+            text: 'VOLTAR'
+            background_color: 1, 0, 0, 1
+            size_hint: 0.3, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.4}
+            on_release: root.manager.current = 'tela_inicio'
+
+
+<GerarServico>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    name: 'gerar_servico'
+    FloatLayout:
+        Label:
+            id: letreiro_gerar_servico
+            text: 'CADASTRO DE SERVIÇO'
+            size_hint: None, None
+            color: 0, 0, 0, 1
+            pos_hint: {'center_x': 0.5, 'y': 0.80}
+        TextInput:
+            id: nome_cliente
+            hint_text: 'NOME DO CLIENTE'
+            multiline: False
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.70}
+        TextInput:
+            id: numero_contato
+            hint_text: 'NÚMERO PARA CONTATO'
+            multiline: False
+            size_hint: 0.7, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.60}
+            input_filter: 'int'
+            input_type: 'number'
+            on_text: if not self.text.isdigit(): self.text = ''.join(filter(str.isdigit, self.text))
+        TextInput:
+            id: valor
+            hint_text: 'VALOR COBRADO'
+            multiline: False
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.50}
+        Spinner:
+            id: tipo
+            text: "SELECIONE O TIPO"
+            values: ["MENSAL", "DIÁRIA"]
+            size_hint: 0.5, None
+            height: 100
+            pos_hint: {'center_x': 0.5, 'y': 0.40}
+        TextInput:
+            id: descricao
+            hint_text: 'DESCRIÇÃO'
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.30}
+        Button:
+            text: 'VOLTAR'
+            background_color: 1, 0, 0, 1
+            size_hint: 0.3, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.10}
+            on_release: root.manager.current = 'tela_inicio'
+        
         
