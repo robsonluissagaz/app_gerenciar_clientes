@@ -1,0 +1,35 @@
+MeuGerenciador:
+    TelaInicio:
+    GerarServico:
+
+
+<TelaInicio>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    name: 'tela_inicio'
+    FloatLayout:
+        Button:
+            text: 'CADASTRAR CLIENTE'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.70}
+        Button:
+            text: 'GERAR SERVIÇO'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.60}
+        Button:
+            text: 'SERVIÇOS NÃO FINALIZADOS'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.50}
+        Button:
+            text: 'SERVIÇOS FINALIZADOS'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.40}
+        

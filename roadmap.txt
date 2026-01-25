@@ -1,10 +1,10 @@
-1.Criar botão de cadastrar cliente
+1.#Criar botão de cadastrar cliente#
   *Nome.
   *Telfone.
   *Endereço.
 
 
-2.Gerar botão de ordem de serviço.
+2.#Gerar botão de ordem de serviço.#
  *Ter a opção de tipo de serviço(mensal ou diária)
  *Se for mensal deve pergunta qual a data mensal.
  *Ter opção de inserir a data do serviço.
