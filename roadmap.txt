@@ -1,0 +1,23 @@
+1.Criar botão de cadastrar cliente
+  *Nome.
+  *Telfone.
+  *Endereço.
+
+
+2.Gerar botão de ordem de serviço.
+ *Ter a opção de tipo de serviço(mensal ou diária)
+ *Se for mensal deve pergunta qual a data mensal.
+ *Ter opção de inserir a data do serviço.
+ *Para gerar serviço deve-se escolher o cliente.
+ *Ter opção de colocar o endereço do serviço.
+ *Ter opção de colocar o valor do serviço.
+ *Ter opção de colocar se já foi pago o valor.
+
+
+3.Criar botão de acompanhar serviços não finalizados.
+ *Deve aparecer uma lista com as datas de cada serviço.
+
+
+4.Criar botão de acompanhar serviços finalizados.
+ *Deve-se perguntar qual cliente.
+ *Deve aparecer uma lista com as datas de cada serviço.
