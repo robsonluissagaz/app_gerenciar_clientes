@@ -104,50 +104,73 @@ MeuGerenciador:
             text: 'CADASTRO DE SERVIÇO'
             size_hint: None, None
             color: 0, 0, 0, 1
-            pos_hint: {'center_x': 0.5, 'y': 0.80}
-        TextInput:
-            id: nome_cliente
-            hint_text: 'NOME DO CLIENTE'
-            multiline: False
-            size_hint: 0.6, 0.06
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.70}
-        TextInput:
-            id: numero_contato
-            hint_text: 'NÚMERO PARA CONTATO'
-            multiline: False
-            size_hint: 0.7, 0.06
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.60}
-            input_filter: 'int'
-            input_type: 'number'
-            on_text: if not self.text.isdigit(): self.text = ''.join(filter(str.isdigit, self.text))
-        TextInput:
-            id: valor
-            hint_text: 'VALOR COBRADO'
-            multiline: False
-            size_hint: 0.6, 0.06
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.50}
+            pos_hint: {'center_x': 0.5, 'y': 0.90}
         Spinner:
             id: tipo
             text: "SELECIONE O TIPO"
             values: ["MENSAL", "DIÁRIA"]
             size_hint: 0.5, None
             height: 100
-            pos_hint: {'center_x': 0.5, 'y': 0.40}
+            pos_hint: {'center_x': 0.5, 'y': 0.80}
         TextInput:
             id: descricao
             hint_text: 'DESCRIÇÃO'
+            size_hint: 0.6, 0.10
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.70}
+        TextInput:
+            id: data_servico
+            hint_text: 'DATA (DD/MM/AAAA)'
+            multiline: False
+            readonly: True
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.60}
+            on_focus: if self.focus: root.abrir_calendario()
+        TextInput:
+            id: nome_cliente
+            hint_text: 'NOME DO CLIENTE'
+            multiline: False
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.50}
+        TextInput:
+            id: numero_contato
+            hint_text: 'NÚMERO PARA CONTATO'
+            multiline: False
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.40}
+            input_filter: 'int'
+            input_type: 'number'
+            on_text: if not self.text.isdigit(): self.text = ''.join(filter(str.isdigit, self.text))
+        TextInput:
+            id: endereco
+            hint_text: 'ENDEREÇO'
+            multiline: True
             size_hint: 0.6, 0.06
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.30}
+        TextInput:
+            id: valor
+            hint_text: 'VALOR COBRADO'
+            multiline: False
+            size_hint: 0.6, 0.06
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.20}
+        Button:
+            text: 'CONFIRMAR'
+            background_color: 3, 0, 0, 3
+            size_hint: 0.3, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.10}
+            on_release: root.manager.current = 'tela_inicio'
         Button:
             text: 'VOLTAR'
             background_color: 1, 0, 0, 1
             size_hint: 0.3, 0.08
             font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.10}
+            pos_hint: {'center_x': 0.5, 'y': 0.03}
             on_release: root.manager.current = 'tela_inicio'
         
         

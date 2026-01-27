@@ -5,7 +5,7 @@
 
 
 2.#Gerar botão de ordem de serviço.#
- *Ter a opção de tipo de serviço(mensal ou diária)
+ #*Ter a opção de tipo de serviço(mensal ou diária)#
  *Se for mensal deve pergunta qual a data mensal.
  *Ter opção de inserir a data do serviço.
  *Para gerar serviço deve-se escolher o cliente.
