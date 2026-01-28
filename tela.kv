@@ -99,6 +99,7 @@ MeuGerenciador:
             size: self.size
     name: 'gerar_servico'
     FloatLayout:
+        id: widgets_gerar_servico
         Label:
             id: letreiro_gerar_servico
             text: 'CADASTRO DE SERVIÇO'
@@ -126,7 +127,7 @@ MeuGerenciador:
             size_hint: 0.6, 0.06
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.65}
-            on_touch_down:if self.collide_point(*args[1].pos): root.abrir_calendario()
+            on_touch_down: if self.collide_point(*args[1].pos): root.abrir_calendario()
         TextInput:
             id: nome_cliente
             hint_text: 'NOME DO CLIENTE'
@@ -172,5 +173,10 @@ MeuGerenciador:
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.03}
             on_release: root.manager.current = 'tela_inicio'
+        BoxLayout:
+            id: box_data
+            orientation: 'vertical'
+            size_hint: 0.6, 0.4
+            pos_hint: {'center_x': 0.5, 'y': 0.25}
         
         
