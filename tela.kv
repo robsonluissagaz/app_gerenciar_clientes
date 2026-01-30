@@ -2,6 +2,7 @@ MeuGerenciador:
     TelaInicio:
     CadastroCliente:
     GerarServico:
+    TelaValorCobrado:
 
 
 <TelaInicio>:
@@ -153,12 +154,14 @@ MeuGerenciador:
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.35}
         TextInput:
-            id: valor
-            hint_text: 'VALOR COBRADO'
+            id: valor_cobrado
+            hint_text: 'INSIRA O VALOR'
             multiline: False
+            readonly: True
             size_hint: 0.6, 0.06
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.25}
+            on_touch_down: root.manager.current = 'valor_servico'
         Button:
             text: 'CONFIRMAR'
             background_color: 3, 0, 0, 3
@@ -173,10 +176,110 @@ MeuGerenciador:
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.03}
             on_release: root.manager.current = 'tela_inicio'
-        BoxLayout:
-            id: box_data
-            orientation: 'vertical'
-            size_hint: 0.6, 0.4
-            pos_hint: {'center_x': 0.5, 'y': 0.25}
+    BoxLayout:
+        id: box_data
+        orientation: 'vertical'
+        size_hint: 0.6, 0.4
+        pos_hint: {'center_x': 0.5, 'y': 0.25}
+
+<TelaValorCobrado>:
+    name: 'valor_servico'
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(16)
+        spacing: dp(12)
+        # 🔹 DISPLAY DO VALOR
+        Label:
+            id: valor_display
+            text: "R$ 0,00"
+            font_size: "36sp"
+            bold: True
+            color: 0, 0, 0, 1
+            size_hint_y: None
+            height: dp(80)
+        # 🔹 TECLADO NUMÉRICO
+        GridLayout:
+            cols: 3
+            spacing: dp(8)
+            size_hint_y: None
+            height: dp(300)
+            Button:
+                text: "1"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(1)
+            Button:
+                text: "2"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(2)
+            Button:
+                text: "3"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(3)
+            Button:
+                text: "4"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(4)
+            Button:
+                text: "5"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(5)
+            Button:
+                text: "6"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(6)
+            Button:
+                text: "7"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(7)
+            Button:
+                text: "8"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(8)
+            Button:
+                text: "9"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(9)
+            Button:
+                text: "LIMPAR"
+                background_normal: ''
+                background_color: (1, 0.75, 0.2, 1)
+                on_release: root.limpar_valor()
+            Button:
+                text: "0"
+                background_normal: ''
+                background_color: (0.0, 0.55, 0.8, 1)
+                on_release: root.adicionar_digito(0)
+            Button:
+                text: "<<<"
+                font_size: "32sp"
+                background_normal: ""
+                background_color: (0.95, 0.75, 0.25, 1)
+                on_release: root.apagar_digito()
+        GridLayout:
+            cols: 2
+            spacing: dp(4)
+            size_hint_y: None
+            height: dp(150)
+            Button:
+                text: "CANCELAR"
+                on_release: root.manager.current = 'cadastro_cliente'
+            Button:
+                text: "CONFIRMAR"
+                on_release: root.adicionar_digito(1)
         
         

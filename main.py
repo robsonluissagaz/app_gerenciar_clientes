@@ -14,13 +14,13 @@ def iniciar_banco():
     con = sqlite3.connect("app.db")
     cur = con.cursor()
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS clientes (
+        CREATE TABLE IF NOT EXISTS ordens_mensais (
             nome TEXT NOT NULL,
             telefone TEXT
         )
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS ordens_servico (
+        CREATE TABLE IF NOT EXISTS ordens_diarias (
             tipo TEXT,
             endereco TEXT,
             data TEXT,
@@ -32,15 +32,6 @@ def iniciar_banco():
     con.commit()
     con.close()
 
-def cadastrar_cliente(nome, telefone):
-    con = sqlite3.connect("app.db")
-    cur = con.cursor()
-    cur.execute(
-        "INSERT INTO clientes (nome, telefone) VALUES (?, ?)",
-        (nome, telefone)
-    )
-    con.commit()
-    con.close()
 
 #gerenciador de telas
 class MeuGerenciador(ScreenManager):
@@ -56,7 +47,10 @@ class CadastroCliente(Screen):
 
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
+    #Abrir calendário
     def abrir_calendario(self):
+        self.ids.widgets_gerar_servico.opacity = 0
+        self.ids.widgets_gerar_servico.disabled = True
         # Cria BoxLayout do calendário
         self.cal_box = BoxLayout(orientation='vertical', size_hint_y=None)
         self.cal_box.size_hint_y = None
@@ -83,19 +77,22 @@ class GerarServico(Screen):
         # Título mês/ano
         titulo = BoxLayout(size_hint_y=None, height=40)
         lbl_mes = BoxLayout(size_hint_x=0.9)
-        lbl_mes.add_widget(Button(text=f"{nome_meses[self.mes_atual-1]} {self.ano_atual}", disabled=True))
+        lbl_mes.add_widget(Button(text=f"{nome_meses[self.mes_atual-1]} {self.ano_atual}",
+                                  background_normal='', background_color=(0.0, 0.55, 0.8, 1)))
         titulo.add_widget(lbl_mes)
         self.cal_box.add_widget(titulo)
         # Grid dos dias
         grid = GridLayout(cols=7, spacing=2, padding=2, size_hint_y=None)
         grid.bind(minimum_height=grid.setter('height'))
         for dia in ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]:
-            grid.add_widget(Button(text=dia, size_hint_y=None, height=40, disabled=True))
+            grid.add_widget(Button(text=dia, size_hint_y=None, height=40,
+                                   background_normal='', background_color=(0.0, 0.55, 0.8, 1)))
         primeiro_dia, qtd_dias = calendar.monthrange(self.ano_atual, self.mes_atual)
         for _ in range(primeiro_dia):
             grid.add_widget(Button(text="", disabled=True))
         for d in range(1, qtd_dias+1):
-            btn = Button(text=str(d), size_hint_y=None, height=40)
+            btn = Button(text=str(d), size_hint_y=None, height=40, 
+                         background_normal='', background_color=(0.0, 0.55, 0.8, 1))
             btn.bind(on_release=self.selecionar_dia)
             grid.add_widget(btn)
         self.cal_box.add_widget(grid)
@@ -141,12 +138,33 @@ class GerarServico(Screen):
         data_hora = self.data_selecionada.replace(hour=hora, minute=minuto)
         self.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
         # Fecha o calendário
-        for widget in self.ids.widgets_gerar_servico.children:
-            widget.opacity = 1
-            widget.disabled = False
+        self.ids.widgets_gerar_servico.opacity = 1
+        self.ids.widgets_gerar_servico.disabled = False
         if hasattr(self, 'cal_box') and self.cal_box:
             self.ids.box_data.clear_widgets()
             self.cal_box = None
+
+class TelaValorCobrado(Screen):
+    valor_centavos = 0
+    def on_pre_enter(self):
+        self.atualizar_display_valor()
+    def atualizar_display_valor(self):
+        reais = self.valor_centavos // 100
+        centavos = self.valor_centavos % 100
+        self.ids.valor_display.text = (
+            f"R$ {reais:,}".replace(',', '.') + f",{centavos:02d}"
+        )
+    def adicionar_digito(self, digito):
+        if self.valor_centavos > 99999999:
+            return
+        self.valor_centavos = self.valor_centavos * 10 + digito
+        self.atualizar_display_valor()
+    def apagar_digito(self):
+        self.valor_centavos //= 10
+        self.atualizar_display_valor()
+    def limpar_valor(self):
+        self.valor_centavos = 0
+        self.atualizar_display_valor()
 
 #Configuração do aplicativo
 class MeuAplicativo(MDApp):
