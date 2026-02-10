@@ -1,9 +1,7 @@
 MeuGerenciador:
     TelaInicio:
-    CadastroCliente:
     GerarServico:
     TelaValorCobrado:
-
 
 <TelaInicio>:
     canvas.before:
@@ -14,12 +12,6 @@ MeuGerenciador:
             size: self.size
     name: 'tela_inicio'
     FloatLayout:
-        Button:
-            text: 'CADASTRAR CLIENTE'
-            size_hint: 0.8, 0.08
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.70}
-            on_release: root.manager.current = 'cadastro_cliente'
         Button:
             text: 'GERAR SERVIÇO'
             size_hint: 0.8, 0.08
@@ -37,59 +29,17 @@ MeuGerenciador:
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.40}
         Button:
+            text: 'PAGAMENTOS PENDENTES'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            pos_hint: {'center_x': 0.5, 'y': 0.30}
+        Button:
             text: 'SAIR'
             size_hint: 0.3, 0.08
             font_size: '18sp'
             background_color: 1, 0, 0, 1
             pos_hint: {'center_x': 0.5, 'y': 0.15}
             on_release: app.fechar_aplicativo()
-
-
-<CadastroCliente>:
-    canvas.before:
-        Color:
-            rgba: 1, 1, 1, 1
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    name: 'cadastro_cliente'
-    FloatLayout:
-        Label:
-            id: letreiro_cadastro_cliente
-            text: 'CADASTRO DE CLIENTE'
-            size_hint: None, None
-            color: 0, 0, 0, 1
-            pos_hint: {'center_x': 0.5, 'y': 0.80}
-        TextInput:
-            id: nome_cliente
-            hint_text: 'NOME DO CLIENTE'
-            multiline: False
-            size_hint: 0.7, 0.06
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.7}
-        TextInput:
-            id: numero_contato
-            hint_text: 'NÚMERO PARA CONTATO'
-            multiline: False
-            size_hint: 0.7, 0.06
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.6}
-            input_filter: 'int'
-            input_type: 'number'
-            on_text: if not self.text.isdigit(): self.text = ''.join(filter(str.isdigit, self.text))
-        Button:
-            text: 'CADASTRAR CLIENTE'
-            size_hint: 0.8, 0.08
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.5}
-        Button:
-            text: 'VOLTAR'
-            background_color: 1, 0, 0, 1
-            size_hint: 0.3, 0.08
-            font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.4}
-            on_release: root.manager.current = 'tela_inicio'
-
 
 <GerarServico>:
     canvas.before:
@@ -161,26 +111,35 @@ MeuGerenciador:
             size_hint: 0.6, 0.06
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.25}
-            on_touch_down: root.manager.current = 'valor_servico'
+            on_touch_down: if self.collide_point(*args[1].pos): root.manager.current = 'valor_servico'
+        Label:
+            text: 'JÁ FOI PAGO?'
+            size_hint: None, None
+            color: 0, 0, 0, 1
+            pos_hint: {'center_x': 0.4, 'y': 0.15}
+        MDSwitch:
+            id: pago_switch
+            active: False
+            pos_hint: {'center_x': 0.6, 'y': 0.15}
         Button:
             text: 'CONFIRMAR'
-            background_color: 3, 0, 0, 3
+            background_color: 0, 1, 0, 1
             size_hint: 0.3, 0.08
             font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.15}
+            pos_hint: {'center_x': 0.8, 'y': 0.05}
             on_release: root.manager.current = 'tela_inicio'
         Button:
             text: 'VOLTAR'
             background_color: 1, 0, 0, 1
             size_hint: 0.3, 0.08
             font_size: '18sp'
-            pos_hint: {'center_x': 0.5, 'y': 0.03}
+            pos_hint: {'center_x': 0.3, 'y': 0.05}
             on_release: root.manager.current = 'tela_inicio'
-    BoxLayout:
-        id: box_data
-        orientation: 'vertical'
-        size_hint: 0.6, 0.4
-        pos_hint: {'center_x': 0.5, 'y': 0.25}
+    RelativeLayout
+    	BoxLayout:
+        	id: box_data
+        	size_hint: 1, 1
+        	pos: self.parent.pos
 
 <TelaValorCobrado>:
     name: 'valor_servico'
@@ -277,9 +236,9 @@ MeuGerenciador:
             height: dp(150)
             Button:
                 text: "CANCELAR"
-                on_release: root.manager.current = 'cadastro_cliente'
+                on_release: root.manager.current = 'gerar_servico'
             Button:
                 text: "CONFIRMAR"
-                on_release: root.adicionar_digito(1)
+                on_release: root.salvar_valor()
         
         

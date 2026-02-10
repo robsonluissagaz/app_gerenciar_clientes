@@ -1,4 +1,5 @@
 from kivy.lang import Builder
+from kivy.properties import NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -14,24 +15,31 @@ def iniciar_banco():
     con = sqlite3.connect("app.db")
     cur = con.cursor()
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS ordens_mensais (
-            nome TEXT NOT NULL,
-            telefone TEXT
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS ordens_diarias (
+        CREATE TABLE IF NOT EXISTS ordens (
             tipo TEXT,
             endereco TEXT,
             data TEXT,
             telefone TEXT,
-            pago TEXT,
-            descricao TEXT
+            pago INTEGER,
+            descricao TEXT,
+            valor REAL
         )
     """)
     con.commit()
     con.close()
 
+def salvar_ordem(tipo, endereco, data, telefone, pago, descricao, valor):
+    con = sqlite3.connect("app.db")
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT INTO ordens_diarias
+        (tipo, endereco, data, telefone, pago, descricao, valor)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (tipo, endereco, data, telefone, pago, descricao, valor))
+
+    con.commit()
+    con.close()
 
 #gerenciador de telas
 class MeuGerenciador(ScreenManager):
@@ -41,19 +49,16 @@ class MeuGerenciador(ScreenManager):
 class TelaInicio(Screen):
     pass
 
-#Tela Cadastro de Cliente
-class CadastroCliente(Screen):
-    pass
-
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
+    valor = NumericProperty(0.0)
     #Abrir calendário
     def abrir_calendario(self):
         self.ids.widgets_gerar_servico.opacity = 0
         self.ids.widgets_gerar_servico.disabled = True
         # Cria BoxLayout do calendário
         self.cal_box = BoxLayout(orientation='vertical', size_hint_y=None)
-        self.cal_box.size_hint_y = None
+        self.cal_box.size_hint_y = 800
         self.cal_box.height = 400
         self.ids.box_data.clear_widgets()
         self.ids.box_data.add_widget(self.cal_box)
@@ -75,7 +80,7 @@ class GerarServico(Screen):
         nome_meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
                       "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
         # Título mês/ano
-        titulo = BoxLayout(size_hint_y=None, height=40)
+        titulo = BoxLayout(size_hint_y=None, height=80)
         lbl_mes = BoxLayout(size_hint_x=0.9)
         lbl_mes.add_widget(Button(text=f"{nome_meses[self.mes_atual-1]} {self.ano_atual}",
                                   background_normal='', background_color=(0.0, 0.55, 0.8, 1)))
@@ -85,19 +90,19 @@ class GerarServico(Screen):
         grid = GridLayout(cols=7, spacing=2, padding=2, size_hint_y=None)
         grid.bind(minimum_height=grid.setter('height'))
         for dia in ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]:
-            grid.add_widget(Button(text=dia, size_hint_y=None, height=40,
+            grid.add_widget(Button(text=dia, size_hint_y=None, height=80,
                                    background_normal='', background_color=(0.0, 0.55, 0.8, 1)))
         primeiro_dia, qtd_dias = calendar.monthrange(self.ano_atual, self.mes_atual)
         for _ in range(primeiro_dia):
             grid.add_widget(Button(text="", disabled=True))
         for d in range(1, qtd_dias+1):
-            btn = Button(text=str(d), size_hint_y=None, height=40, 
+            btn = Button(text=str(d), size_hint_y=None, height=80, 
                          background_normal='', background_color=(0.0, 0.55, 0.8, 1))
             btn.bind(on_release=self.selecionar_dia)
             grid.add_widget(btn)
         self.cal_box.add_widget(grid)
         # Botões de navegação horizontal do mês
-        nav_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=40, spacing=10)
+        nav_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=80, spacing=10)
         btn_anterior = Button(text="Mês Anterior")
         btn_anterior.bind(on_release=self.mes_anterior)
         btn_proximo = Button(text="Próximo Mês")
@@ -143,7 +148,19 @@ class GerarServico(Screen):
         if hasattr(self, 'cal_box') and self.cal_box:
             self.ids.box_data.clear_widgets()
             self.cal_box = None
+    #Função que salva a ordem no banco de dados
+    def confirmar_servico(self):
+        salvar_ordem(
+            self.ids.tipo.text,
+            self.ids.endereco.text,
+            self.ids.data_servico.text,
+            self.ids.numero_contato.text,
+            "NÃO",
+            self.ids.descricao.text,
+            self.valor
+        )
 
+#Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):
     valor_centavos = 0
     def on_pre_enter(self):
@@ -152,8 +169,7 @@ class TelaValorCobrado(Screen):
         reais = self.valor_centavos // 100
         centavos = self.valor_centavos % 100
         self.ids.valor_display.text = (
-            f"R$ {reais:,}".replace(',', '.') + f",{centavos:02d}"
-        )
+            f"R$ {reais:,}".replace(',', '.') + f",{centavos:02d}")
     def adicionar_digito(self, digito):
         if self.valor_centavos > 99999999:
             return
@@ -165,6 +181,13 @@ class TelaValorCobrado(Screen):
     def limpar_valor(self):
         self.valor_centavos = 0
         self.atualizar_display_valor()
+    def salvar_valor(self):
+        texto = self.ids.valor_display.text
+        valor_float = float(texto.replace("R$", "").replace(".", "").replace(",", ".").strip())
+        tela_gerar = self.manager.get_screen("gerar_servico")
+        tela_gerar.valor = valor_float
+        tela_gerar.ids.valor_cobrado.text = (f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        self.manager.current = "gerar_servico"
 
 #Configuração do aplicativo
 class MeuAplicativo(MDApp):
