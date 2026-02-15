@@ -9,6 +9,9 @@ from datetime import datetime
 import sqlite3
 from kivy.uix.button import Button
 import calendar
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.label import MDLabel
 
 # ------------------ Banco de Dados ------------------ #
 def iniciar_banco():
@@ -17,6 +20,7 @@ def iniciar_banco():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS ordens (
             tipo TEXT,
+            nome_cliente TEXT,
             endereco TEXT,
             data TEXT,
             telefone TEXT,
@@ -28,16 +32,22 @@ def iniciar_banco():
     con.commit()
     con.close()
 
-def salvar_ordem(tipo, endereco, data, telefone, pago, descricao, valor):
+def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
     con = sqlite3.connect("app.db")
     cur = con.cursor()
-
     cur.execute("""
-        INSERT INTO ordens_diarias
-        (tipo, endereco, data, telefone, pago, descricao, valor)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (tipo, endereco, data, telefone, pago, descricao, valor))
-
+        INSERT INTO ordens (tipo, nome_cliente, endereco, data, telefone, pago, descricao, valor)
+        VALUES (?,?, ?, ?, ?, ?, ?, ?)
+    """, (
+        tipo,
+        nome,
+        endereco,
+        data,
+        telefone,
+        int(pago),
+        descricao,
+        float(valor) if valor else 0.0
+    ))
     con.commit()
     con.close()
 
@@ -107,8 +117,10 @@ class GerarServico(Screen):
         btn_anterior.bind(on_release=self.mes_anterior)
         btn_proximo = Button(text="Próximo Mês")
         btn_proximo.bind(on_release=self.proximo_mes)
+        btn_cancelar = Button(text="CANCELAR",background_normal='', background_color=(1, 0, 0, 1))
         nav_box.add_widget(btn_anterior)
         nav_box.add_widget(btn_proximo)
+        nav_box.add_widget(btn_cancelar)
         self.cal_box.add_widget(nav_box)
     # Seleção do dia passando para o seletor de hora
     def selecionar_dia(self, instance):
@@ -152,13 +164,51 @@ class GerarServico(Screen):
     def confirmar_servico(self):
         salvar_ordem(
             self.ids.tipo.text,
-            self.ids.endereco.text,
+            self.ids.nome_cliente.text.strip().upper(),
+            self.ids.endereco.text.strip().upper(),
             self.ids.data_servico.text,
             self.ids.numero_contato.text,
-            "NÃO",
-            self.ids.descricao.text,
-            self.valor
+            1 if self.ids.pago_switch.active else 0,
+            self.ids.descricao.text.strip().upper(),
+            self.valor if hasattr(self, "valor") else 0
         )
+        self.limpar_campos()
+        self.mostrar_popup_sucesso()
+    #Função para mostrar o diálogo de confirmação
+    def mostrar_popup_sucesso(self):
+        conteudo = MDLabel(
+            text="Ordem de serviço gerada com sucesso!",
+            halign="center",
+            theme_text_color="Custom",
+            text_color=(0, 0.7, 0, 1),
+        )
+        self.dialog = MDDialog(
+            title="Sucesso!",
+            type="custom",
+            content_cls=conteudo,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    text_color=(0, 0.6, 0, 1),
+                    on_release=lambda x: self.fechar_popup()
+                ),
+            ],
+        )
+        self.dialog.open()
+    #Função para fechar o diálogo de confirmação
+    def fechar_popup(self):
+        self.dialog.dismiss()
+        self.manager.current = "tela_inicio"
+    #Função para os widgets da tela de gerar serviço
+    def limpar_campos(self):
+        self.ids.tipo.text = "SELECIONE O TIPO"
+        self.ids.endereco.text = ""
+        self.ids.nome_cliente.text = ""
+        self.ids.data_servico.text = ""
+        self.ids.numero_contato.text = ""
+        self.ids.descricao.text = ""
+        self.ids.valor_cobrado.text = ""
+        self.ids.pago_switch.active = False
 
 #Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):

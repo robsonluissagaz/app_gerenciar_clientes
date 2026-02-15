@@ -126,8 +126,8 @@ MeuGerenciador:
             background_color: 0, 1, 0, 1
             size_hint: 0.3, 0.08
             font_size: '18sp'
-            pos_hint: {'center_x': 0.8, 'y': 0.05}
-            on_release: root.manager.current = 'tela_inicio'
+            pos_hint: {'center_x': 0.7, 'y': 0.05}
+            on_release: root.confirmar_servico()
         Button:
             text: 'VOLTAR'
             background_color: 1, 0, 0, 1
@@ -233,12 +233,14 @@ MeuGerenciador:
             cols: 2
             spacing: dp(4)
             size_hint_y: None
-            height: dp(150)
+            height: dp(50)
             Button:
                 text: "CANCELAR"
+                background_color: 1, 0, 0, 1
                 on_release: root.manager.current = 'gerar_servico'
             Button:
                 text: "CONFIRMAR"
+                background_color: 0, 1, 0, 1
                 on_release: root.salvar_valor()
         
         
