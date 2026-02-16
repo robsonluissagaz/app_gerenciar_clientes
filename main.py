@@ -12,6 +12,7 @@ import calendar
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.label import MDLabel
+from kivymd.uix.list import ThreeLineListItem
 
 # ------------------ Banco de Dados ------------------ #
 def iniciar_banco():
@@ -19,12 +20,13 @@ def iniciar_banco():
     cur = con.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS ordens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             tipo TEXT,
             nome_cliente TEXT,
             endereco TEXT,
-            data TEXT,
+            data DATETIME,
             telefone TEXT,
-            pago INTEGER,
+            pago TEXT,
             descricao TEXT,
             valor REAL
         )
@@ -44,7 +46,7 @@ def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
         endereco,
         data,
         telefone,
-        int(pago),
+        pago,
         descricao,
         float(valor) if valor else 0.0
     ))
@@ -118,6 +120,7 @@ class GerarServico(Screen):
         btn_proximo = Button(text="Próximo Mês")
         btn_proximo.bind(on_release=self.proximo_mes)
         btn_cancelar = Button(text="CANCELAR",background_normal='', background_color=(1, 0, 0, 1))
+        btn_cancelar.bind(on_release=lambda x: self.fecha_calendario())
         nav_box.add_widget(btn_anterior)
         nav_box.add_widget(btn_proximo)
         nav_box.add_widget(btn_cancelar)
@@ -160,6 +163,13 @@ class GerarServico(Screen):
         if hasattr(self, 'cal_box') and self.cal_box:
             self.ids.box_data.clear_widgets()
             self.cal_box = None
+    #função para fechar o calendário caso o usuário cancele a seleção
+    def fecha_calendario(self):
+        self.ids.widgets_gerar_servico.opacity = 1
+        self.ids.widgets_gerar_servico.disabled = False
+        if hasattr(self, 'cal_box') and self.cal_box:
+            self.ids.box_data.clear_widgets()
+            self.cal_box = None
     #Função que salva a ordem no banco de dados
     def confirmar_servico(self):
         salvar_ordem(
@@ -168,7 +178,7 @@ class GerarServico(Screen):
             self.ids.endereco.text.strip().upper(),
             self.ids.data_servico.text,
             self.ids.numero_contato.text,
-            1 if self.ids.pago_switch.active else 0,
+            'SIM' if self.ids.pago_switch.active else 'NÃO',
             self.ids.descricao.text.strip().upper(),
             self.valor if hasattr(self, "valor") else 0
         )
@@ -238,6 +248,35 @@ class TelaValorCobrado(Screen):
         tela_gerar.valor = valor_float
         tela_gerar.ids.valor_cobrado.text = (f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         self.manager.current = "gerar_servico"
+
+#Tela de serviços
+class TelaServicos(Screen):
+    def on_pre_enter(self):
+        self.carregar_servicos()
+    def carregar_servicos(self):
+        dia_atual = datetime.now().strftime("%d/%m/%Y")
+        self.ids.lista_servicos.clear_widgets()
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            SELECT id, nome_cliente, data, endereco, valor, pago
+            FROM ordens
+            where data >= ?
+            ORDER BY id DESC
+        """, (dia_atual,))
+        dados = cur.fetchall()
+        con.close()
+        for id_ordem, nome, data, endereco, valor, pago in dados:
+            status = "PAGAMENTO EFETUADO" if pago == "SIM" else "PAGAMENTO PENDENTE"
+            item = ThreeLineListItem(
+                text=f"{nome}",
+                secondary_text=f"Data: {data} | Valor: R$ {valor}      Endereço: {endereco}",
+                tertiary_text=status,
+                on_release=lambda x, id_=id_ordem: self.abrir_detalhes(id_)
+            )
+            self.ids.lista_servicos.add_widget(item)
+    def abrir_detalhes(self, id_ordem):
+        print("Abrir detalhes da ordem:", id_ordem)
 
 #Configuração do aplicativo
 class MeuAplicativo(MDApp):

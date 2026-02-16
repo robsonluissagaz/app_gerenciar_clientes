@@ -2,6 +2,7 @@ MeuGerenciador:
     TelaInicio:
     GerarServico:
     TelaValorCobrado:
+    TelaServicos:
 
 <TelaInicio>:
     canvas.before:
@@ -19,10 +20,11 @@ MeuGerenciador:
             pos_hint: {'center_x': 0.5, 'y': 0.60}
             on_release: root.manager.current = 'gerar_servico'
         Button:
-            text: 'SERVIÇOS NÃO FINALIZADOS'
+            text: 'SERVIÇOS ATIVOS'
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.50}
+            on_release: root.manager.current = 'tela_servicos'
         Button:
             text: 'SERVIÇOS FINALIZADOS'
             size_hint: 0.8, 0.08
@@ -242,5 +244,14 @@ MeuGerenciador:
                 text: "CONFIRMAR"
                 background_color: 0, 1, 0, 1
                 on_release: root.salvar_valor()
-        
-        
+
+<TelaServicos>:
+    name: "tela_servicos"
+    MDBoxLayout:
+        orientation: "vertical"
+        MDTopAppBar:
+            title: "SERVIÇOS ATIVOS"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+        ScrollView:
+            MDList:
+                id: lista_servicos
