@@ -13,6 +13,7 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import ThreeLineListItem
+from kivy.properties import StringProperty
 
 # ------------------ Banco de Dados ------------------ #
 def iniciar_banco():
@@ -250,7 +251,7 @@ class TelaValorCobrado(Screen):
         self.manager.current = "gerar_servico"
 
 #Tela de serviços
-class TelaServicos(Screen):
+class TelaServicosAtivos(Screen):
     def on_pre_enter(self):
         self.carregar_servicos()
     def carregar_servicos(self):
@@ -276,7 +277,49 @@ class TelaServicos(Screen):
             )
             self.ids.lista_servicos.add_widget(item)
     def abrir_detalhes(self, id_ordem):
-        print("Abrir detalhes da ordem:", id_ordem)
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            select * from ordens where id = ?
+        """, (id_ordem,))
+        dados = cur.fetchall()
+        con.close()
+        tela = self.manager.get_screen("tela_descricao_servicos_ativos")
+        tela.id_ordem = str(f"ID: {dados[0][0]}\nTipo: {dados[0][1]}\nCliente: {dados[0][2]}\nEndereço: {dados[0][3]}\nData: {dados[0][4]}\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nDescrição: {dados[0][7]}\nValor: R$ {dados[0][8]:.2f}")
+        self.manager.current = "tela_descricao_servicos_ativos"
+
+class TelaDescricaoServicoAtivo(Screen):
+    id_ordem = StringProperty("")
+    def on_pre_enter(self):
+        pass
+
+class TelaServicosFinalizados(Screen):
+    def on_pre_enter(self):
+        self.carregar_servicos()
+    def carregar_servicos(self):
+        dia_atual = datetime.now().strftime("%d/%m/%Y")
+        self.ids.lista_servicos.clear_widgets()
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            SELECT id, nome_cliente, data, endereco, valor, pago
+            FROM ordens
+            where data < ?
+            ORDER BY id DESC
+        """, (dia_atual,))
+        dados = cur.fetchall()
+        print(dados)
+        con.close()
+        for id_ordem, nome, data, endereco, valor, pago in dados:
+            status = "PAGAMENTO EFETUADO" if pago == "SIM" else "PAGAMENTO PENDENTE"
+            item = ThreeLineListItem(
+                text=f"{nome}",
+                secondary_text=f"Data: {data} | Valor: R$ {valor}      Endereço: {endereco}",
+                tertiary_text=status,
+                on_release=lambda x, id_=id_ordem: self.abrir_detalhes(id_)
+            )
+            self.ids.lista_servicos.add_widget(item)
+
 
 #Configuração do aplicativo
 class MeuAplicativo(MDApp):

@@ -2,7 +2,8 @@ MeuGerenciador:
     TelaInicio:
     GerarServico:
     TelaValorCobrado:
-    TelaServicos:
+    TelaServicosAtivos:
+    TelaDescricaoServicoAtivo:
 
 <TelaInicio>:
     canvas.before:
@@ -24,7 +25,7 @@ MeuGerenciador:
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.50}
-            on_release: root.manager.current = 'tela_servicos'
+            on_release: root.manager.current = 'tela_servicos_ativos'
         Button:
             text: 'SERVIÇOS FINALIZADOS'
             size_hint: 0.8, 0.08
@@ -245,8 +246,8 @@ MeuGerenciador:
                 background_color: 0, 1, 0, 1
                 on_release: root.salvar_valor()
 
-<TelaServicos>:
-    name: "tela_servicos"
+<TelaServicosAtivos>:
+    name: "tela_servicos_ativos"
     MDBoxLayout:
         orientation: "vertical"
         MDTopAppBar:
@@ -255,3 +256,27 @@ MeuGerenciador:
         ScrollView:
             MDList:
                 id: lista_servicos
+
+<TelaDescricaoServicoAtivo>:
+    name: "tela_descricao_servicos_ativos"
+    FloatLayout:
+        id: layout_descricao_servicos_ativos
+        Label:
+            id: label_descricao_servicos_ativos
+            text: root.id_ordem
+            size_hint: None, None
+            color: 0, 0, 0, 1
+            pos_hint: {'center_x': 0.5, 'y': 0.60}
+        Button:
+            text: "CANCELAR SERVICO"
+            background_color: 0, 0, 0, 1
+            size_hint: 0.5, 0.08
+            pos_hint: {'center_x': 0.7, 'y': 0.30}
+            on_release: root.manager.current = 'tela_servicos_ativos'
+        Button:
+            text: "VOLTAR"
+            background_color: 1, 0, 0, 1
+            size_hint: 0.3, 0.08
+            pos_hint: {'center_x': 0.2, 'y': 0.30}
+            on_release: root.manager.current = 'tela_servicos_ativos'
+            
