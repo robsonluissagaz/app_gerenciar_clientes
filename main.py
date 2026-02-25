@@ -14,6 +14,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import ThreeLineListItem
 from kivy.properties import StringProperty
+from kivy.clock import Clock
 
 # ------------------ Banco de Dados ------------------ #
 def iniciar_banco():
@@ -60,7 +61,27 @@ class MeuGerenciador(ScreenManager):
 
 #Tala Inicial
 class TelaInicio(Screen):
-    pass
+    def on_pre_enter(self):
+        Clock.schedule_once(self.atualizar_faturamento)
+
+    def atualizar_faturamento(self, *args):
+        self.ids.faturamento_mes.text = \
+            f"Faturamento do mês: R$ {self.carregar_faturamento_mes():.2f}"
+
+    def carregar_faturamento_mes(self):
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        mes_atual = datetime.now().month
+        ano_atual = datetime.now().year
+        data_comparacao = f'01/{mes_atual:02d}/{ano_atual}'
+        data_comparacao1 = f'31/{mes_atual:02d}/{ano_atual}'
+        cur.execute("""select SUM(valor) from ordens
+                    where data >= ? and data <= ? and pago = 'SIM'""",
+                    (data_comparacao, data_comparacao1))
+        resultado = cur.fetchone()[0]
+        con.close()
+        return resultado if resultado else 0.0
+        
 
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
