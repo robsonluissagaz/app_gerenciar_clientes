@@ -63,11 +63,11 @@ class MeuGerenciador(ScreenManager):
 class TelaInicio(Screen):
     def on_pre_enter(self):
         Clock.schedule_once(self.atualizar_faturamento)
-
+    #Atualiza a label de faturamento do mês toda vez que a tela for exibida
     def atualizar_faturamento(self, *args):
         self.ids.faturamento_mes.text = \
             f"Faturamento do mês: R$ {self.carregar_faturamento_mes():.2f}"
-
+    #Função para carregar o faturamento do mês atual somando os valores das ordens pagas
     def carregar_faturamento_mes(self):
         con = sqlite3.connect("app.db")
         cur = con.cursor()
@@ -81,7 +81,6 @@ class TelaInicio(Screen):
         resultado = cur.fetchone()[0]
         con.close()
         return resultado if resultado else 0.0
-        
 
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
@@ -245,24 +244,30 @@ class GerarServico(Screen):
 #Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):
     valor_centavos = 0
+    #Atualiza o display do valor toda vez que a tela for exibida
     def on_pre_enter(self):
         self.atualizar_display_valor()
+    #Função para atualizar o display do valor formatando em reais e centavos
     def atualizar_display_valor(self):
         reais = self.valor_centavos // 100
         centavos = self.valor_centavos % 100
         self.ids.valor_display.text = (
             f"R$ {reais:,}".replace(',', '.') + f",{centavos:02d}")
+    #Função para adicionar dígitos ao valor em centavos, limitando a 8 dígitos (999.999,99)
     def adicionar_digito(self, digito):
         if self.valor_centavos > 99999999:
             return
         self.valor_centavos = self.valor_centavos * 10 + digito
         self.atualizar_display_valor()
+    #Função para apagar o último dígito do valor em centavos
     def apagar_digito(self):
         self.valor_centavos //= 10
         self.atualizar_display_valor()
+    #Função para limpar o valor em centavos
     def limpar_valor(self):
         self.valor_centavos = 0
         self.atualizar_display_valor()
+    #Função para salvar o valor formatando em reais e centavos e passando para a tela de gerar serviço
     def salvar_valor(self):
         texto = self.ids.valor_display.text
         valor_float = float(texto.replace("R$", "").replace(".", "").replace(",", ".").strip())
@@ -275,6 +280,7 @@ class TelaValorCobrado(Screen):
 class TelaServicosAtivos(Screen):
     def on_pre_enter(self):
         self.carregar_servicos()
+    #Função para carregar os serviços do dia atual ou futuros.
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%d/%m/%Y")
         self.ids.lista_servicos.clear_widgets()
@@ -297,6 +303,7 @@ class TelaServicosAtivos(Screen):
                 on_release=lambda x, id_=id_ordem: self.abrir_detalhes(id_)
             )
             self.ids.lista_servicos.add_widget(item)
+    #Função para abrir a tela de detalhes do serviço passando as informações da ordem selecionada
     def abrir_detalhes(self, id_ordem):
         con = sqlite3.connect("app.db")
         cur = con.cursor()
@@ -317,6 +324,7 @@ class TelaDescricaoServicoAtivo(Screen):
 class TelaServicosFinalizados(Screen):
     def on_pre_enter(self):
         self.carregar_servicos()
+    #Função para carregar os serviços do dia anterior ou anteriores.
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%d/%m/%Y")
         self.ids.lista_servicos.clear_widgets()
