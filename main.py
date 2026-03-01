@@ -1,3 +1,5 @@
+from time import time
+
 from kivy.lang import Builder
 from kivy.properties import NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -85,10 +87,62 @@ class TelaInicio(Screen):
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
     valor = NumericProperty(0.0)
+    #Função que salva a ordem no banco de dados
+    def confirmar_servico(self):
+        salvar_ordem(
+            self.ids.tipo.text,
+            self.ids.nome_cliente.text.strip().upper(),
+            self.ids.endereco.text.strip().upper(),
+            self.ids.data_servico.text,
+            self.ids.numero_contato.text,
+            'SIM' if self.ids.pago_switch.active else 'NÃO',
+            self.ids.descricao.text.strip().upper(),
+            self.valor if hasattr(self, "valor") else 0
+        )
+        self.limpar_campos()
+        self.mostrar_popup_sucesso()
+    #Função para mostrar o diálogo de confirmação
+    def mostrar_popup_sucesso(self):
+        conteudo = MDLabel(
+            text="Ordem de serviço gerada com sucesso!",
+            halign="center",
+            theme_text_color="Custom",
+            text_color=(0, 0.7, 0, 1),
+        )
+        self.dialog = MDDialog(
+            title="Sucesso!",
+            type="custom",
+            content_cls=conteudo,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    text_color=(0, 0.6, 0, 1),
+                    on_release=lambda x: self.fechar_popup()
+                ),
+            ],
+        )
+        self.dialog.open()
+    #Função para fechar o diálogo de confirmação
+    def fechar_popup(self):
+        self.dialog.dismiss()
+        self.manager.current = "tela_inicio"
+    #Função para os widgets da tela de gerar serviço
+    def limpar_campos(self):
+        self.ids.tipo.text = "SELECIONE O TIPO"
+        self.ids.endereco.text = ""
+        self.ids.nome_cliente.text = ""
+        self.ids.data_servico.text = ""
+        self.ids.numero_contato.text = ""
+        self.ids.descricao.text = ""
+        self.ids.valor_cobrado.text = ""
+        self.ids.pago_switch.active = False
+
+#Tela do calandário
+class TelaCalendario(Screen):
+    def on_pre_enter(self):
+        self.abrir_calendario()
     #Abrir calendário
     def abrir_calendario(self):
-        self.ids.widgets_gerar_servico.opacity = 0
-        self.ids.widgets_gerar_servico.disabled = True
         # Cria BoxLayout do calendário
         self.cal_box = BoxLayout(orientation='vertical', size_hint_y=None)
         self.cal_box.size_hint_y = 800
@@ -172,74 +226,17 @@ class GerarServico(Screen):
         time_picker = MDTimePicker()
         time_picker.bind(on_save=self.salvar_hora)
         time_picker.open()
-    # Salvar hora selecionada
+    # Salvar hora selecionada e volta para tela gerar serviço
     def salvar_hora(self, instance, time):
         hora = time.hour
         minuto = time.minute
         data_hora = self.data_selecionada.replace(hour=hora, minute=minuto)
-        self.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
-        # Fecha o calendário
-        self.ids.widgets_gerar_servico.opacity = 1
-        self.ids.widgets_gerar_servico.disabled = False
-        if hasattr(self, 'cal_box') and self.cal_box:
-            self.ids.box_data.clear_widgets()
-            self.cal_box = None
-    #função para fechar o calendário caso o usuário cancele a seleção
+        tela = self.manager.get_screen("gerar_servico")
+        tela.ids.data_servico.text = data_hora.strftime("%Y-%m-%d %H:%M")
+        self.manager.current = "gerar_servico"
+    #Fecha o calendário e volta para a tela de gerar serviço
     def fecha_calendario(self):
-        self.ids.widgets_gerar_servico.opacity = 1
-        self.ids.widgets_gerar_servico.disabled = False
-        if hasattr(self, 'cal_box') and self.cal_box:
-            self.ids.box_data.clear_widgets()
-            self.cal_box = None
-    #Função que salva a ordem no banco de dados
-    def confirmar_servico(self):
-        salvar_ordem(
-            self.ids.tipo.text,
-            self.ids.nome_cliente.text.strip().upper(),
-            self.ids.endereco.text.strip().upper(),
-            self.ids.data_servico.text,
-            self.ids.numero_contato.text,
-            'SIM' if self.ids.pago_switch.active else 'NÃO',
-            self.ids.descricao.text.strip().upper(),
-            self.valor if hasattr(self, "valor") else 0
-        )
-        self.limpar_campos()
-        self.mostrar_popup_sucesso()
-    #Função para mostrar o diálogo de confirmação
-    def mostrar_popup_sucesso(self):
-        conteudo = MDLabel(
-            text="Ordem de serviço gerada com sucesso!",
-            halign="center",
-            theme_text_color="Custom",
-            text_color=(0, 0.7, 0, 1),
-        )
-        self.dialog = MDDialog(
-            title="Sucesso!",
-            type="custom",
-            content_cls=conteudo,
-            buttons=[
-                MDFlatButton(
-                    text="OK",
-                    text_color=(0, 0.6, 0, 1),
-                    on_release=lambda x: self.fechar_popup()
-                ),
-            ],
-        )
-        self.dialog.open()
-    #Função para fechar o diálogo de confirmação
-    def fechar_popup(self):
-        self.dialog.dismiss()
-        self.manager.current = "tela_inicio"
-    #Função para os widgets da tela de gerar serviço
-    def limpar_campos(self):
-        self.ids.tipo.text = "SELECIONE O TIPO"
-        self.ids.endereco.text = ""
-        self.ids.nome_cliente.text = ""
-        self.ids.data_servico.text = ""
-        self.ids.numero_contato.text = ""
-        self.ids.descricao.text = ""
-        self.ids.valor_cobrado.text = ""
-        self.ids.pago_switch.active = False
+        self.manager.current = "gerar_servico"
 
 #Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):
@@ -282,7 +279,7 @@ class TelaServicosAtivos(Screen):
         self.carregar_servicos()
     #Função para carregar os serviços do dia atual ou futuros.
     def carregar_servicos(self):
-        dia_atual = datetime.now().strftime("%d/%m/%Y")
+        dia_atual = datetime.now().strftime("%Y-%m-%d")
         self.ids.lista_servicos.clear_widgets()
         con = sqlite3.connect("app.db")
         cur = con.cursor()
@@ -320,6 +317,49 @@ class TelaDescricaoServicoAtivo(Screen):
     id_ordem = StringProperty("")
     def on_pre_enter(self):
         pass
+    
+    def cancelar_servico(self):
+        self.dialog_confirmar = MDDialog(
+            title="Confirmar Cancelamento",
+            text="Tem certeza que deseja cancelar este serviço?",
+            buttons=[
+                MDFlatButton(
+                    text="CANCELAR",
+                    on_release=lambda x: self.dialog_confirmar.dismiss()
+                ),
+                MDFlatButton(
+                    text="CONFIRMAR",
+                    on_release=lambda x: self.executar_cancelamento()
+                )
+            ]
+        )
+        self.dialog_confirmar.open()
+
+    def executar_cancelamento(self):
+        # Fecha o popup de confirmação primeiro
+        self.dialog_confirmar.dismiss()
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        id_real = self.id_ordem.split("\n")[0].split(": ")[1]
+        cur.execute("DELETE FROM ordens WHERE id = ?", (id_real,))
+        con.commit()
+        con.close()
+        self.dialog_sucesso = MDDialog(
+            title="Serviço Cancelado",
+            text="O serviço foi cancelado com sucesso.",
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    on_release=lambda x: self.fechar_sucesso()
+                )
+            ]
+        )
+        self.dialog_sucesso.open()
+        self.manager.get_screen("tela_servicos_ativos").carregar_servicos()
+        
+    def fechar_sucesso(self):
+        self.dialog_sucesso.dismiss()
+        self.manager.current = "tela_servicos_ativos"
 
 class TelaServicosFinalizados(Screen):
     def on_pre_enter(self):
