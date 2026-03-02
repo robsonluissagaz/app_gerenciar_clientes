@@ -5,6 +5,7 @@ MeuGerenciador:
     TelaServicosAtivos:
     TelaDescricaoServicoAtivo:
     TelaCalendario:
+    TelaEditarServico:
 
 <TelaInicio>:
     canvas.before:
@@ -264,13 +265,133 @@ MeuGerenciador:
             left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_servicos_ativos")]]
             size_hint_y: None
             height: "56dp"
-        Label:
-            id: label_descricao_servicos_ativos
-            text: root.id_ordem
-            color: 0, 0, 0, 1
-        Button:
-            text: "CANCELAR SERVICO"
-            background_color: 0, 0, 0, 1
+        # Área do conteúdo com rolagem
+        ScrollView:
+            MDBoxLayout:
+                orientation: "vertical"
+                padding: "20dp"
+                spacing: "10dp"
+                size_hint_y: None
+                height: self.minimum_height
+                MDLabel:
+                    id: label_descricao_servicos_ativos
+                    text: root.id_ordem
+                    halign: "center"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
+                    font_style: "Body1"
+                    size_hint_y: None
+                    text_size: self.width - 20, None
+                    height: self.texture_size[1]
+        MDBoxLayout:
+            orientation: "vertical"
             size_hint_y: None
-            height: "48dp"
-            on_release: root.cancelar_servico()
+            height: "220dp"
+            spacing: "15dp"
+            padding: "10dp"
+            MDRaisedButton:
+                text: "CONCLUIR SERVIÇO"
+                md_bg_color: 0, 0.5, 0, 1
+                size_hint: 0.8, None
+                height: "50dp"
+                pos_hint: {"center_x": 0.5}
+                on_release: root.cancelar_servico()
+            MDRaisedButton:
+                text: "EDITAR SERVIÇO"
+                md_bg_color: 0.6, 0.6, 0, 1
+                size_hint: 0.8, None
+                height: "50dp"
+                pos_hint: {"center_x": 0.5}
+                on_release: root.editar_servico()
+            MDRaisedButton:
+                text: "CANCELAR SERVIÇO"
+                md_bg_color: 1, 0, 0, 1
+                size_hint: 0.8, None
+                height: "50dp"
+                pos_hint: {"center_x": 0.5}
+                on_release: root.cancelar_servico()
+
+<TelaEditarServico>:
+    name: 'editar_servico'
+    MDScreen:
+        MDBoxLayout:
+            id: widgets_gerar_servico
+            orientation: "vertical"
+            MDTopAppBar:
+                title: "EDITAR SERVIÇO"
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_descricao_servicos_ativos")]]
+                size_hint_y: None
+                height: "56dp"
+            ScrollView:
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: "15dp"
+                    padding: "20dp"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    Spinner:
+                        id: tipo
+                        text: "SELECIONE O TIPO"
+                        values: ["MENSAL", "DIÁRIA"]
+                        size_hint_y: None
+                        height: "48dp"
+                    TextInput:
+                        id: descricao
+                        hint_text: 'DESCRIÇÃO'
+                        size_hint_y: None
+                        height: "80dp"
+                        font_size: '18sp'
+                    TextInput:
+                        id: data_servico
+                        hint_text: 'DATA (DD/MM/AAAA)'
+                        multiline: False
+                        readonly: True
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                        on_touch_down:
+                            if self.collide_point(*args[1].pos): root.manager.current = 'tela_calendario'
+                    TextInput:
+                        id: nome_cliente
+                        hint_text: 'NOME DO CLIENTE'
+                        multiline: False
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                    TextInput:
+                        id: numero_contato
+                        hint_text: 'NÚMERO PARA CONTATO'
+                        multiline: False
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                        input_filter: 'int'
+                        input_type: 'number'
+                    TextInput:
+                        id: endereco
+                        hint_text: 'ENDEREÇO'
+                        multiline: True
+                        size_hint_y: None
+                        height: "80dp"
+                        font_size: '18sp'
+                    TextInput:
+                        id: valor_cobrado
+                        hint_text: 'INSIRA O VALOR'
+                        multiline: False
+                        readonly: True
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                        on_touch_down:
+                            if self.collide_point(*args[1].pos): root.manager.current = 'valor_servico'
+                    MDLabel:
+                        text: "JÁ FOI PAGO?"
+                    MDSwitch:
+                        id: pago_switch
+                        active: False
+                        width: "60dp"
+                    MDRaisedButton:
+                        text: "CONFIRMAR"
+                        size_hint_y: None
+                        height: "48dp"
+                        on_release: root.salvar_alteracoes()

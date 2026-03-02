@@ -41,6 +41,7 @@ def iniciar_banco():
 def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
     con = sqlite3.connect("app.db")
     cur = con.cursor()
+    data_datetime = datetime.strptime(data, "%d/%m/%Y %H:%M")
     cur.execute("""
         INSERT INTO ordens (tipo, nome_cliente, endereco, data, telefone, pago, descricao, valor)
         VALUES (?,?, ?, ?, ?, ?, ?, ?)
@@ -48,7 +49,7 @@ def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
         tipo,
         nome,
         endereco,
-        data,
+        data_datetime,
         telefone,
         pago,
         descricao,
@@ -99,6 +100,26 @@ class GerarServico(Screen):
             self.ids.descricao.text.strip().upper(),
             self.valor if hasattr(self, "valor") else 0
         )
+        if (
+            self.ids.tipo.text == "SELECIONE O TIPO" or
+            not self.ids.descricao.text.strip() or
+            not self.ids.data_servico.text or
+            not self.ids.nome_cliente.text.strip() or
+            not self.ids.numero_contato.text or
+            not self.ids.endereco.text.strip() or
+            not self.valor):
+            self.dialog_erro = MDDialog(
+                title="Campos obrigatórios",
+                text="Preencha todos os campos antes de confirmar.",
+                buttons=[
+                    MDFlatButton(
+                        text="OK",
+                        on_release=lambda x: self.dialog_erro.dismiss()
+                    )
+                ]
+            )
+            self.dialog_erro.open()
+            return
         self.limpar_campos()
         self.mostrar_popup_sucesso()
     #Função para mostrar o diálogo de confirmação
@@ -232,7 +253,7 @@ class TelaCalendario(Screen):
         minuto = time.minute
         data_hora = self.data_selecionada.replace(hour=hora, minute=minuto)
         tela = self.manager.get_screen("gerar_servico")
-        tela.ids.data_servico.text = data_hora.strftime("%Y-%m-%d %H:%M")
+        tela.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
         self.manager.current = "gerar_servico"
     #Fecha o calendário e volta para a tela de gerar serviço
     def fecha_calendario(self):
@@ -271,6 +292,7 @@ class TelaValorCobrado(Screen):
         tela_gerar = self.manager.get_screen("gerar_servico")
         tela_gerar.valor = valor_float
         tela_gerar.ids.valor_cobrado.text = (f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        self.limpar_valor()
         self.manager.current = "gerar_servico"
 
 #Tela de serviços
@@ -318,6 +340,27 @@ class TelaDescricaoServicoAtivo(Screen):
     def on_pre_enter(self):
         pass
     
+    def editar_servico(self):
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        id_real = self.id_ordem.split("\n")[0].split(": ")[1]
+        cur.execute("""
+            select * from ordens where id = ?
+        """, (id_real,))
+        dados = cur.fetchall()
+        con.close()
+        tela = self.manager.get_screen("editar_servico")
+        tela.ids.tipo.text = dados[0][1]
+        tela.ids.nome_cliente.text = dados[0][2]
+        tela.ids.endereco.text = dados[0][3]
+        tela.ids.data_servico.text = dados[0][4]
+        tela.ids.numero_contato.text = dados[0][5]
+        tela.ids.pago_switch.active = True if dados[0][6] == "SIM" else False
+        tela.ids.descricao.text = dados[0][7]
+        tela.valor = dados[0][8]
+        tela.ids.valor_cobrado.text = f"R$ {dados[0][8]:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        self.manager.current = "editar_servico"
+    
     def cancelar_servico(self):
         self.dialog_confirmar = MDDialog(
             title="Confirmar Cancelamento",
@@ -359,6 +402,35 @@ class TelaDescricaoServicoAtivo(Screen):
         
     def fechar_sucesso(self):
         self.dialog_sucesso.dismiss()
+        self.manager.current = "tela_servicos_ativos"
+
+class TelaEditarServico(Screen):
+    valor = NumericProperty(0.0)
+    def on_pre_enter(self):
+        pass
+    #Função para salvar as alterações do serviço editado no banco de dados
+    def salvar_alteracoes(self):
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        id_real = self.manager.get_screen("tela_descricao_servicos_ativos").id_ordem.split("\n")[0].split(": ")[1]
+        cur.execute("""
+            UPDATE ordens
+            SET tipo = ?, nome_cliente = ?, endereco = ?, data = ?, telefone = ?, pago = ?, descricao = ?, valor = ?
+            WHERE id = ?
+        """, (
+            self.ids.tipo.text,
+            self.ids.nome_cliente.text.strip().upper(),
+            self.ids.endereco.text.strip().upper(),
+            self.ids.data_servico.text,
+            self.ids.numero_contato.text,
+            'SIM' if self.ids.pago_switch.active else 'NÃO',
+            self.ids.descricao.text.strip().upper(),
+            self.valor if hasattr(self, "valor") else 0,
+            id_real
+        ))
+        con.commit()
+        con.close()
+        self.manager.get_screen("tela_servicos_ativos").carregar_servicos()
         self.manager.current = "tela_servicos_ativos"
 
 class TelaServicosFinalizados(Screen):
