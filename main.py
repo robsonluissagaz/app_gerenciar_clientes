@@ -1,5 +1,4 @@
 from time import time
-
 from kivy.lang import Builder
 from kivy.properties import NumericProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -94,6 +93,8 @@ class GerarServico(Screen):
     def on_pre_enter(self):
         tela_calendario = self.manager.get_screen("tela_calendario")
         tela_calendario.tela_atual = "gerar_servico"
+        tela_valor_cobrado = self.manager.get_screen("valor_servico")
+        tela_valor_cobrado.tela_atual = "gerar_servico"
     valor = NumericProperty(0.0)
     #Função que salva a ordem no banco de dados
     def confirmar_servico(self):
@@ -269,6 +270,7 @@ class TelaCalendario(Screen):
 
 #Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):
+    tela_atual = StringProperty("")
     valor_centavos = 0
     #Atualiza o display do valor toda vez que a tela for exibida
     def on_pre_enter(self):
@@ -297,11 +299,14 @@ class TelaValorCobrado(Screen):
     def salvar_valor(self):
         texto = self.ids.valor_display.text
         valor_float = float(texto.replace("R$", "").replace(".", "").replace(",", ".").strip())
-        tela_gerar = self.manager.get_screen("gerar_servico")
+        tela_gerar = self.manager.get_screen(self.tela_atual)
         tela_gerar.valor = valor_float
         tela_gerar.ids.valor_cobrado.text = (f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         self.limpar_valor()
-        self.manager.current = "gerar_servico"
+        self.manager.current = self.tela_atual
+    #Função para o botão cancelar
+    def cancelar(self):
+        self.manager.current = self.tela_atual
 
 #Tela de serviços
 class TelaServicosAtivos(Screen):
@@ -344,20 +349,24 @@ class TelaServicosAtivos(Screen):
         tela = self.manager.get_screen("tela_descricao_servicos_ativos")
         data_br = datetime.strptime(dados[0][4], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
         tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
+        tela.id_real = str(id_ordem)
         self.manager.current = "tela_descricao_servicos_ativos"
 
 class TelaDescricaoServicoAtivo(Screen):
     id_ordem = StringProperty("")
+    id_real = StringProperty("")
+
     def on_pre_enter(self):
-        pass
+        tela_editar = self.manager.get_screen("editar_servico")
+        tela_editar.id_real = self.id_real
+
     
     def editar_servico(self):
         con = sqlite3.connect("app.db")
         cur = con.cursor()
-        id_real = self.id_ordem.split("\n")[0].split(": ")[1]
         cur.execute("""
             select * from ordens where id = ?
-        """, (id_real,))
+        """, (self.id_real,))
         dados = cur.fetchall()
         con.close()
         tela = self.manager.get_screen("editar_servico")
@@ -368,15 +377,15 @@ class TelaDescricaoServicoAtivo(Screen):
         tela.ids.data_servico.text = datetime.strptime(data, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
         tela.ids.numero_contato.text = dados[0][5]
         tela.ids.pago_switch.active = True if dados[0][6] == "SIM" else False
-        tela.ids.descricao.text = dados[0][7]
-        tela.valor = dados[0][8]
-        tela.ids.valor_cobrado.text = f"R$ {dados[0][8]:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        tela.ids.descricao.text = dados[0][8]
+        tela.valor = dados[0][9]
+        tela.ids.valor_cobrado.text = f"R$ {dados[0][9]:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         self.manager.current = "editar_servico"
     
     def cancelar_servico(self):
         self.dialog_confirmar = MDDialog(
             title="Confirmar Cancelamento",
-            text="Tem certeza que deseja cancelar este serviço?",
+            text="[color=ff0000]Tem certeza que deseja cancelar este serviço?[/color]",
             buttons=[
                 MDFlatButton(
                     text="CANCELAR",
@@ -395,13 +404,12 @@ class TelaDescricaoServicoAtivo(Screen):
         self.dialog_confirmar.dismiss()
         con = sqlite3.connect("app.db")
         cur = con.cursor()
-        id_real = self.id_ordem.split("\n")[0].split(": ")[1]
-        cur.execute("DELETE FROM ordens WHERE id = ?", (id_real,))
+        cur.execute("DELETE FROM ordens WHERE id = ?", (self.id_real,))
         con.commit()
         con.close()
         self.dialog_sucesso = MDDialog(
             title="Serviço Cancelado",
-            text="O serviço foi cancelado com sucesso.",
+            text="[color=00ff00]O serviço foi cancelado com sucesso.[/color]",
             buttons=[
                 MDFlatButton(
                     text="OK",
@@ -411,22 +419,24 @@ class TelaDescricaoServicoAtivo(Screen):
         )
         self.dialog_sucesso.open()
         self.manager.get_screen("tela_servicos_ativos").carregar_servicos()
-        
+    #Função para fechar o popup de sucesso e voltar para a tela de serviços ativos
     def fechar_sucesso(self):
         self.dialog_sucesso.dismiss()
         self.manager.current = "tela_servicos_ativos"
 
 class TelaEditarServico(Screen):
     valor = NumericProperty(0.0)
+    id_real = StringProperty("")
     def on_pre_enter(self):
         tela_calendario = self.manager.get_screen("tela_calendario")
         tela_calendario.tela_atual = "editar_servico"
+        tela_valor_cobrado = self.manager.get_screen("valor_servico")
+        tela_valor_cobrado.tela_atual = "editar_servico"
 
     #Função para salvar as alterações do serviço editado no banco de dados
     def salvar_alteracoes(self):
         con = sqlite3.connect("app.db")
         cur = con.cursor()
-        id_real = self.manager.get_screen("tela_descricao_servicos_ativos").id_ordem.split("\n")[0].split(": ")[1]
         cur.execute("""
             UPDATE ordens
             SET tipo = ?, nome_cliente = ?, endereco = ?, data = ?, telefone = ?, pago = ?, descricao = ?, valor = ?
@@ -440,11 +450,35 @@ class TelaEditarServico(Screen):
             'SIM' if self.ids.pago_switch.active else 'NÃO',
             self.ids.descricao.text.strip().upper(),
             self.valor if hasattr(self, "valor") else 0,
-            id_real
+            self.id_real
         ))
         con.commit()
         con.close()
-        self.manager.get_screen("tela_servicos_ativos").carregar_servicos()
+        self.mostrar_popup_sucesso()
+    #Função para mostrar o diálogo de confirmação de alterações salvas
+    def mostrar_popup_sucesso(self):
+        conteudo = MDLabel(
+            text="Alterações salvas com sucesso!",
+            halign="center",
+            theme_text_color="Custom",
+            text_color=(0, 0.7, 0, 1),
+        )
+        self.dialog = MDDialog(
+            title="Sucesso!",
+            type="custom",
+            content_cls=conteudo,
+            buttons=[
+                MDFlatButton(
+                    text="OK",
+                    text_color=(0, 0.6, 0, 1),
+                    on_release=lambda x: self.fechar_popup()
+                ),
+            ],
+        )
+        self.dialog.open()
+    #Função para fechar o diálogo de confirmação e voltar para a tela de serviços ativos
+    def fechar_popup(self):
+        self.dialog.dismiss()
         self.manager.current = "tela_servicos_ativos"
 
 class TelaServicosFinalizados(Screen):
@@ -463,7 +497,6 @@ class TelaServicosFinalizados(Screen):
             ORDER BY id DESC
         """, (dia_atual,))
         dados = cur.fetchall()
-        print(dados)
         con.close()
         for id_ordem, nome, data, endereco, valor, pago in dados:
             status = "PAGAMENTO EFETUADO" if pago == "SIM" else "PAGAMENTO PENDENTE"
