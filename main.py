@@ -31,6 +31,7 @@ def iniciar_banco():
             data DATETIME,
             telefone TEXT,
             pago TEXT,
+            competencia DATETIME GENERATED ALWAYS AS (strftime('%Y-%m', data) || '-01') STORED,
             descricao TEXT,
             valor REAL
         )
@@ -66,27 +67,33 @@ class MeuGerenciador(ScreenManager):
 class TelaInicio(Screen):
     def on_pre_enter(self):
         Clock.schedule_once(self.atualizar_faturamento)
+
     #Atualiza a label de faturamento do mês toda vez que a tela for exibida
     def atualizar_faturamento(self, *args):
         self.ids.faturamento_mes.text = \
             f"Faturamento do mês: R$ {self.carregar_faturamento_mes():.2f}"
+        
     #Função para carregar o faturamento do mês atual somando os valores das ordens pagas
     def carregar_faturamento_mes(self):
         con = sqlite3.connect("app.db")
         cur = con.cursor()
         mes_atual = datetime.now().month
         ano_atual = datetime.now().year
-        data_comparacao = f'01/{mes_atual:02d}/{ano_atual}'
-        data_comparacao1 = f'31/{mes_atual:02d}/{ano_atual}'
-        cur.execute("""select SUM(valor) from ordens
-                    where data >= ? and data <= ? and pago = 'SIM'""",
-                    (data_comparacao, data_comparacao1))
+        competencia = f"{ano_atual}-{mes_atual:02d}"
+        data_comparacao = f"{competencia}-01"
+        cur.execute(""" SELECT SUM(valor) FROM ordens
+                    WHERE competencia = ?
+                    AND pago = 'SIM' """,
+                    (data_comparacao,))
         resultado = cur.fetchone()[0]
         con.close()
         return resultado if resultado else 0.0
 
 #Tela Gerar Serviço com calendário personalizado
 class GerarServico(Screen):
+    def on_pre_enter(self):
+        tela_calendario = self.manager.get_screen("tela_calendario")
+        tela_calendario.tela_atual = "gerar_servico"
     valor = NumericProperty(0.0)
     #Função que salva a ordem no banco de dados
     def confirmar_servico(self):
@@ -160,6 +167,7 @@ class GerarServico(Screen):
 
 #Tela do calandário
 class TelaCalendario(Screen):
+    tela_atual = StringProperty("")
     def on_pre_enter(self):
         self.abrir_calendario()
     #Abrir calendário
@@ -252,12 +260,12 @@ class TelaCalendario(Screen):
         hora = time.hour
         minuto = time.minute
         data_hora = self.data_selecionada.replace(hour=hora, minute=minuto)
-        tela = self.manager.get_screen("gerar_servico")
+        tela = self.manager.get_screen(self.tela_atual)
         tela.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
-        self.manager.current = "gerar_servico"
-    #Fecha o calendário e volta para a tela de gerar serviço
+        self.manager.current = self.tela_atual
+    #Fecha o calendário e volta para a tela anterior
     def fecha_calendario(self):
-        self.manager.current = "gerar_servico"
+        self.manager.current = self.tela_atual
 
 #Tela para a interface de inserir o valor
 class TelaValorCobrado(Screen):
@@ -313,8 +321,10 @@ class TelaServicosAtivos(Screen):
         """, (dia_atual,))
         dados = cur.fetchall()
         con.close()
+        
         for id_ordem, nome, data, endereco, valor, pago in dados:
             status = "PAGAMENTO EFETUADO" if pago == "SIM" else "PAGAMENTO PENDENTE"
+            data = datetime.strptime(data, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
             item = ThreeLineListItem(
                 text=f"{nome}",
                 secondary_text=f"Data: {data} | Valor: R$ {valor}      Endereço: {endereco}",
@@ -332,7 +342,8 @@ class TelaServicosAtivos(Screen):
         dados = cur.fetchall()
         con.close()
         tela = self.manager.get_screen("tela_descricao_servicos_ativos")
-        tela.id_ordem = str(f"ID: {dados[0][0]}\nTipo: {dados[0][1]}\nCliente: {dados[0][2]}\nEndereço: {dados[0][3]}\nData: {dados[0][4]}\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nDescrição: {dados[0][7]}\nValor: R$ {dados[0][8]:.2f}")
+        data_br = datetime.strptime(dados[0][4], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
+        tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
         self.manager.current = "tela_descricao_servicos_ativos"
 
 class TelaDescricaoServicoAtivo(Screen):
@@ -353,7 +364,8 @@ class TelaDescricaoServicoAtivo(Screen):
         tela.ids.tipo.text = dados[0][1]
         tela.ids.nome_cliente.text = dados[0][2]
         tela.ids.endereco.text = dados[0][3]
-        tela.ids.data_servico.text = dados[0][4]
+        data = dados[0][4]
+        tela.ids.data_servico.text = datetime.strptime(data, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
         tela.ids.numero_contato.text = dados[0][5]
         tela.ids.pago_switch.active = True if dados[0][6] == "SIM" else False
         tela.ids.descricao.text = dados[0][7]
@@ -407,7 +419,9 @@ class TelaDescricaoServicoAtivo(Screen):
 class TelaEditarServico(Screen):
     valor = NumericProperty(0.0)
     def on_pre_enter(self):
-        pass
+        tela_calendario = self.manager.get_screen("tela_calendario")
+        tela_calendario.tela_atual = "editar_servico"
+
     #Função para salvar as alterações do serviço editado no banco de dados
     def salvar_alteracoes(self):
         con = sqlite3.connect("app.db")
@@ -421,7 +435,7 @@ class TelaEditarServico(Screen):
             self.ids.tipo.text,
             self.ids.nome_cliente.text.strip().upper(),
             self.ids.endereco.text.strip().upper(),
-            self.ids.data_servico.text,
+            datetime.strptime(self.ids.data_servico.text, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S"),
             self.ids.numero_contato.text,
             'SIM' if self.ids.pago_switch.active else 'NÃO',
             self.ids.descricao.text.strip().upper(),
