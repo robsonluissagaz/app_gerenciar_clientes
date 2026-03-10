@@ -3,9 +3,10 @@ MeuGerenciador:
     GerarServico:
     TelaValorCobrado:
     TelaServicosAtivos:
-    TelaDescricaoServicoAtivo:
+    TelaDescricaoServicos:
     TelaCalendario:
     TelaEditarServico:
+    TelaServicosFinalizados:
 
 <TelaInicio>:
     canvas.before:
@@ -39,6 +40,7 @@ MeuGerenciador:
             size_hint: 0.8, 0.08
             font_size: '18sp'
             pos_hint: {'center_x': 0.5, 'y': 0.40}
+            on_release: root.manager.current = 'tela_servicos_finalizados'
         Button:
             text: 'PAGAMENTOS PENDENTES'
             size_hint: 0.8, 0.08
@@ -155,7 +157,6 @@ MeuGerenciador:
         orientation: 'vertical'
         padding: dp(16)
         spacing: dp(12)
-        # 🔹 DISPLAY DO VALOR
         Label:
             id: valor_display
             text: "R$ 0,00"
@@ -164,7 +165,6 @@ MeuGerenciador:
             color: 0, 0, 0, 1
             size_hint_y: None
             height: dp(80)
-        # 🔹 TECLADO NUMÉRICO
         GridLayout:
             cols: 3
             spacing: dp(8)
@@ -256,13 +256,13 @@ MeuGerenciador:
             MDList:
                 id: lista_servicos
 
-<TelaDescricaoServicoAtivo>:
-    name: "tela_descricao_servicos_ativos"
+<TelaDescricaoServicos>:
+    name: "tela_descricao_servicos"
     MDBoxLayout:
         orientation: "vertical"
         MDTopAppBar:
             title: "DESCRIÇÃO DO SERVIÇO"
-            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_servicos_ativos")]]
+            left_action_items: [["arrow-left", lambda x: root.voltar_tela()]]
             size_hint_y: None
             height: "56dp"
         # Área do conteúdo com rolagem
@@ -290,13 +290,6 @@ MeuGerenciador:
             spacing: "15dp"
             padding: "10dp"
             MDRaisedButton:
-                text: "CONCLUIR SERVIÇO"
-                md_bg_color: 0, 0.5, 0, 1
-                size_hint: 0.8, None
-                height: "50dp"
-                pos_hint: {"center_x": 0.5}
-                on_release: root.cancelar_servico()
-            MDRaisedButton:
                 text: "EDITAR SERVIÇO"
                 md_bg_color: 0.6, 0.6, 0, 1
                 size_hint: 0.8, None
@@ -319,7 +312,7 @@ MeuGerenciador:
             orientation: "vertical"
             MDTopAppBar:
                 title: "EDITAR SERVIÇO"
-                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_descricao_servicos_ativos")]]
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_descricao_servicos")]]
                 size_hint_y: None
                 height: "56dp"
             ScrollView:
@@ -395,3 +388,14 @@ MeuGerenciador:
                         size_hint_y: None
                         height: "48dp"
                         on_release: root.salvar_alteracoes()
+
+<TelaServicosFinalizados>:
+    name: "tela_servicos_finalizados"
+    MDBoxLayout:
+        orientation: "vertical"
+        MDTopAppBar:
+            title: "SERVIÇOS FINALIZADOS"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+        ScrollView:
+            MDList:
+                id: lista_servicos_finalizados

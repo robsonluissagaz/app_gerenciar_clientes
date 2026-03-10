@@ -312,6 +312,8 @@ class TelaValorCobrado(Screen):
 class TelaServicosAtivos(Screen):
     def on_pre_enter(self):
         self.carregar_servicos()
+        tela = self.manager.get_screen('tela_descricao_servicos')
+        tela.tela_anterior = 'tela_servicos_ativos'
     #Função para carregar os serviços do dia atual ou futuros.
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%Y-%m-%d")
@@ -346,19 +348,22 @@ class TelaServicosAtivos(Screen):
         """, (id_ordem,))
         dados = cur.fetchall()
         con.close()
-        tela = self.manager.get_screen("tela_descricao_servicos_ativos")
+        tela = self.manager.get_screen("tela_descricao_servicos")
         data_br = datetime.strptime(dados[0][4], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
         tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
         tela.id_real = str(id_ordem)
-        self.manager.current = "tela_descricao_servicos_ativos"
+        self.manager.current = "tela_descricao_servicos"
 
-class TelaDescricaoServicoAtivo(Screen):
+class TelaDescricaoServicos(Screen):
     id_ordem = StringProperty("")
     id_real = StringProperty("")
+    tela_anterior = StringProperty("")
 
     def on_pre_enter(self):
+        print(self.tela_anterior)
         tela_editar = self.manager.get_screen("editar_servico")
         tela_editar.id_real = self.id_real
+        self.manager.get_screen(self.tela_anterior).carregar_servicos()
 
     
     def editar_servico(self):
@@ -370,6 +375,7 @@ class TelaDescricaoServicoAtivo(Screen):
         dados = cur.fetchall()
         con.close()
         tela = self.manager.get_screen("editar_servico")
+        tela.tela_anterior = 'tela_descricao_servicos'
         tela.ids.tipo.text = dados[0][1]
         tela.ids.nome_cliente.text = dados[0][2]
         tela.ids.endereco.text = dados[0][3]
@@ -418,15 +424,21 @@ class TelaDescricaoServicoAtivo(Screen):
             ]
         )
         self.dialog_sucesso.open()
-        self.manager.get_screen("tela_servicos_ativos").carregar_servicos()
-    #Função para fechar o popup de sucesso e voltar para a tela de serviços ativos
+        self.manager.get_screen(self.tela_anterior).carregar_servicos()
+
+    #Função para fechar o popup de sucesso e voltar para a tela anterior
     def fechar_sucesso(self):
         self.dialog_sucesso.dismiss()
-        self.manager.current = "tela_servicos_ativos"
+        self.manager.current = self.tela_anterior
+
+    def voltar_tela(self):
+        self.manager.current = self.tela_anterior
+    
 
 class TelaEditarServico(Screen):
     valor = NumericProperty(0.0)
     id_real = StringProperty("")
+    tela_anterior = StringProperty("")
     def on_pre_enter(self):
         tela_calendario = self.manager.get_screen("tela_calendario")
         tela_calendario.tela_atual = "editar_servico"
@@ -476,18 +488,24 @@ class TelaEditarServico(Screen):
             ],
         )
         self.dialog.open()
-    #Função para fechar o diálogo de confirmação e voltar para a tela de serviços ativos
+
+    #Função para fechar o diálogo de confirmação e voltar para a tela anterior
     def fechar_popup(self):
+        tela_descricao = self.manager.get_screen(self.tela_anterior)
+        tela_alvo = tela_descricao.tela_anterior
+        self.manager.get_screen(tela_alvo).abrir_detalhes(tela_descricao.id_real)
         self.dialog.dismiss()
-        self.manager.current = "tela_servicos_ativos"
+        self.manager.current = self.tela_anterior
 
 class TelaServicosFinalizados(Screen):
     def on_pre_enter(self):
         self.carregar_servicos()
+        tela = self.manager.get_screen('tela_descricao_servicos')
+        tela.tela_anterior = 'tela_servicos_finalizados'
     #Função para carregar os serviços do dia anterior ou anteriores.
     def carregar_servicos(self):
-        dia_atual = datetime.now().strftime("%d/%m/%Y")
-        self.ids.lista_servicos.clear_widgets()
+        dia_atual = datetime.now().strftime("%Y-%m-%d")
+        self.ids.lista_servicos_finalizados.clear_widgets()
         con = sqlite3.connect("app.db")
         cur = con.cursor()
         cur.execute("""
@@ -506,7 +524,21 @@ class TelaServicosFinalizados(Screen):
                 tertiary_text=status,
                 on_release=lambda x, id_=id_ordem: self.abrir_detalhes(id_)
             )
-            self.ids.lista_servicos.add_widget(item)
+            self.ids.lista_servicos_finalizados.add_widget(item)
+    
+    def abrir_detalhes(self, id_ordem):
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            select * from ordens where id = ?
+        """, (id_ordem,))
+        dados = cur.fetchall()
+        con.close()
+        tela = self.manager.get_screen("tela_descricao_servicos")
+        data_br = datetime.strptime(dados[0][4], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
+        tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
+        tela.id_real = str(id_ordem)
+        self.manager.current = "tela_descricao_servicos"
 
 
 #Configuração do aplicativo
