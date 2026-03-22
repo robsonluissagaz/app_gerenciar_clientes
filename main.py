@@ -66,11 +66,18 @@ class MeuGerenciador(ScreenManager):
 class TelaInicio(Screen):
     def on_pre_enter(self):
         Clock.schedule_once(self.atualizar_faturamento)
+    
+    def on_pre_leave(self):
+        tela_financas = self.manager.get_screen('tela_gerenciamento_financas')
+        tela_financas.ids.data_inicio.text = ''
+        tela_financas.ids.data_fim.text = ''
+        tela_financas.ids.botao_faturamento.text = ''
+        tela_financas.ids.botao_faturamento.opacity = 0
 
     #Atualiza a label de faturamento do mês toda vez que a tela for exibida
     def atualizar_faturamento(self, *args):
-        self.ids.faturamento_mes.text = \
-            f"Faturamento do mês: R$ {self.carregar_faturamento_mes():.2f}"
+        self.ids.botao_faturamento.text = \
+            f"Faturamento do mês atual:\n[color=#00FF00]R$ {self.carregar_faturamento_mes():.2f}[/color]\n\nControle de faturamento"
         
     #Função para carregar o faturamento do mês atual somando os valores das ordens pagas
     def carregar_faturamento_mes(self):
@@ -169,6 +176,7 @@ class GerarServico(Screen):
 #Tela do calandário
 class TelaCalendario(Screen):
     tela_atual = StringProperty("")
+    widget_atual = StringProperty("")
     def on_pre_enter(self):
         self.abrir_calendario()
     #Abrir calendário
@@ -262,7 +270,13 @@ class TelaCalendario(Screen):
         minuto = time.minute
         data_hora = self.data_selecionada.replace(hour=hora, minute=minuto)
         tela = self.manager.get_screen(self.tela_atual)
-        tela.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
+        if self.tela_atual != 'tela_gerenciamento_financas':
+            tela.ids.data_servico.text = data_hora.strftime("%d/%m/%Y %H:%M")
+        else:
+            if self.widget_atual == 'data_inicio':
+                tela.ids.data_inicio.text = data_hora.strftime("%d/%m/%Y %H:%M")
+            else:
+                tela.ids.data_fim.text = data_hora.strftime("%d/%m/%Y %H:%M")
         self.manager.current = self.tela_atual
     #Fecha o calendário e volta para a tela anterior
     def fecha_calendario(self):
@@ -360,7 +374,6 @@ class TelaDescricaoServicos(Screen):
     tela_anterior = StringProperty("")
 
     def on_pre_enter(self):
-        print(self.tela_anterior)
         tela_editar = self.manager.get_screen("editar_servico")
         tela_editar.id_real = self.id_real
         self.manager.get_screen(self.tela_anterior).carregar_servicos()
@@ -539,6 +552,88 @@ class TelaServicosFinalizados(Screen):
         tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
         tela.id_real = str(id_ordem)
         self.manager.current = "tela_descricao_servicos"
+
+class TelaServicosNaoPagos(Screen):
+    def on_pre_enter(self):
+        self.carregar_servicos()
+        tela = self.manager.get_screen('tela_descricao_servicos')
+        tela.tela_anterior = 'tela_servicos_nao_pagos'
+    #Função para carregar os serviços do dia anterior ou anteriores.
+    def carregar_servicos(self):
+        dia_atual = datetime.now().strftime("%Y-%m-%d")
+        self.ids.lista_servicos_nao_pagos.clear_widgets()
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            SELECT id, nome_cliente, data, endereco, valor, pago
+            FROM ordens
+            where data < ?
+            and pago = 'NÃO'
+            ORDER BY id DESC
+        """, (dia_atual,))
+        dados = cur.fetchall()
+        con.close()
+        for id_ordem, nome, data, endereco, valor, pago in dados:
+            status = "PAGAMENTO EFETUADO" if pago == "SIM" else "PAGAMENTO PENDENTE"
+            item = ThreeLineListItem(
+                text=f"{nome}",
+                secondary_text=f"Data: {data} | Valor: R$ {valor}      Endereço: {endereco}",
+                tertiary_text=status,
+                on_release=lambda x, id_=id_ordem: self.abrir_detalhes(id_)
+            )
+            self.ids.lista_servicos_nao_pagos.add_widget(item)
+    
+    def abrir_detalhes(self, id_ordem):
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            select * from ordens where id = ?
+        """, (id_ordem,))
+        dados = cur.fetchall()
+        con.close()
+        tela = self.manager.get_screen("tela_descricao_servicos")
+        data_br = datetime.strptime(dados[0][4], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y %H:%M")
+        tela.id_ordem = str(f"Tipo: {dados[0][1]}\n\nCliente: {dados[0][2]}\n\nEndereço: {dados[0][3]}\n\nData: {data_br}\n\nTelefone: {dados[0][5]}\nPago: {dados[0][6]}\nValor: R$ {dados[0][9]:.2f}\n\nDescrição: {dados[0][8]}")
+        tela.id_real = str(id_ordem)
+        self.manager.current = "tela_descricao_servicos"
+
+class TelaGerenciadorDeFinancas(Screen):
+    def on_pre_enter(self):
+        tela_calendario = self.manager.get_screen("tela_calendario")
+        tela_calendario.tela_atual = "tela_gerenciamento_financas"
+
+    def mandar_id_widget1(self):
+        tela_calendario = self.manager.get_screen("tela_calendario")
+        tela_calendario.widget_atual = "data_inicio"
+        self.manager.current = 'tela_calendario'
+    
+    def mandar_id_widget2(self):
+        tela_calendario = self.manager.get_screen("tela_calendario")
+        tela_calendario.widget_atual = "data_fim"
+        self.manager.current = 'tela_calendario'
+
+    def carregar_faturamento(self):
+        tela = self.manager.get_screen('tela_gerenciamento_financas')
+        data_inicio = tela.ids.data_inicio.text
+        data_fim = tela.ids.data_fim.text
+        if not data_inicio or not data_fim:
+            return 0
+        from datetime import datetime
+        data_inicio = datetime.strptime(data_inicio, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
+        data_fim = datetime.strptime(data_fim, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
+        con = sqlite3.connect("app.db")
+        cur = con.cursor()
+        cur.execute("""
+            SELECT SUM(valor)
+            FROM ordens
+            WHERE data BETWEEN ? AND ?
+            AND pago = 'SIM'
+        """, (data_inicio, data_fim))
+        total = cur.fetchone()[0]
+        con.close()
+        tela.ids.botao_faturamento.opacity = 1
+        tela.ids.botao_faturamento.text = f"Faturamento do período selecionado\n[color=#00FF00]R$ {total}[/color]"
+
 
 
 #Configuração do aplicativo

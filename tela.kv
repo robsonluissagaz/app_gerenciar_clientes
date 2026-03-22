@@ -7,6 +7,8 @@ MeuGerenciador:
     TelaCalendario:
     TelaEditarServico:
     TelaServicosFinalizados:
+    TelaServicosNaoPagos:
+    TelaGerenciadorDeFinancas:
 
 <TelaInicio>:
     canvas.before:
@@ -17,40 +19,50 @@ MeuGerenciador:
             size: self.size
     name: 'tela_inicio'
     FloatLayout:
-        Label:
-            id: faturamento_mes
+        MDRaisedButton:
+            id: botao_faturamento
             text: ''
-            size_hint: None, None
-            color: 0, 0, 0, 1
-            pos_hint: {'center_x': 0.5, 'y': 0.90}
-        Button:
+            size_hint: 0.9, None
+            height: "60dp"
+            pos_hint: {'center_x': 0.5, 'y': 0.80}
+            on_release: root.manager.current = 'tela_gerenciamento_financas'
+        MDFillRoundFlatButton:
             text: 'GERAR SERVIÇO'
             size_hint: 0.8, 0.08
             font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
             pos_hint: {'center_x': 0.5, 'y': 0.60}
             on_release: root.manager.current = 'gerar_servico'
-        Button:
+        MDFillRoundFlatButton:
             text: 'SERVIÇOS ATIVOS'
             size_hint: 0.8, 0.08
             font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
             pos_hint: {'center_x': 0.5, 'y': 0.50}
             on_release: root.manager.current = 'tela_servicos_ativos'
-        Button:
+        MDFillRoundFlatButton:
             text: 'SERVIÇOS FINALIZADOS'
             size_hint: 0.8, 0.08
             font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
             pos_hint: {'center_x': 0.5, 'y': 0.40}
             on_release: root.manager.current = 'tela_servicos_finalizados'
-        Button:
+        MDFillRoundFlatButton:
             text: 'PAGAMENTOS PENDENTES'
             size_hint: 0.8, 0.08
             font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
             pos_hint: {'center_x': 0.5, 'y': 0.30}
-        Button:
+            on_release: root.manager.current = 'tela_servicos_nao_pagos'
+        MDFillRoundFlatButton:
             text: 'SAIR'
             size_hint: 0.3, 0.08
             font_size: '18sp'
-            background_color: 1, 0, 0, 1
+            md_bg_color: 0.8, 0, 0, 1
             pos_hint: {'center_x': 0.5, 'y': 0.15}
             on_release: app.fechar_aplicativo()
 
@@ -82,7 +94,7 @@ MeuGerenciador:
                         id: descricao
                         hint_text: 'DESCRIÇÃO'
                         size_hint_y: None
-                        height: "48dp"
+                        height: "80dp"
                         font_size: '18sp'
                     TextInput:
                         id: data_servico
@@ -276,7 +288,7 @@ MeuGerenciador:
                 MDLabel:
                     id: label_descricao_servicos_ativos
                     text: root.id_ordem
-                    halign: "center"
+                    halign: "left"
                     theme_text_color: "Custom"
                     text_color: 0, 0, 0, 1
                     font_style: "Body1"
@@ -399,3 +411,68 @@ MeuGerenciador:
         ScrollView:
             MDList:
                 id: lista_servicos_finalizados
+
+<TelaServicosNaoPagos>:
+    name: "tela_servicos_nao_pagos"
+    MDBoxLayout:
+        orientation: "vertical"
+        MDTopAppBar:
+            title: "PAGAMENTOS PENDENTES"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+        ScrollView:
+            MDList:
+                id: lista_servicos_nao_pagos
+
+<TelaGerenciadorDeFinancas>:
+    name: "tela_gerenciamento_financas"
+    MDScreen:
+        MDBoxLayout:
+            id: widgets_controle_financas
+            orientation: "vertical"
+            MDTopAppBar:
+                title: "CONTROLE DE FATURAMENTO"
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+                size_hint_y: None
+                height: "56dp"
+            FloatLayout:
+                TextInput:
+                    id: data_inicio
+                    hint_text: 'DATA INÍCIO (DD/MM/AAAA)'
+                    multiline: False
+                    readonly: True
+                    size_hint: 0.8, None
+                    height: "48dp"
+                    font_size: '18sp'
+                    pos_hint: {'center_x': 0.5, 'y': 0.80}
+                    on_touch_down:
+                        if self.collide_point(*args[1].pos): root.mandar_id_widget1()
+                TextInput:
+                    id: data_fim
+                    hint_text: 'DATA FIM (DD/MM/AAAA)'
+                    multiline: False
+                    readonly: True
+                    size_hint: 0.8, None
+                    height: "48dp"
+                    font_size: '18sp'
+                    pos_hint: {'center_x': 0.5, 'y': 0.65}
+                    on_touch_down:
+                        if self.collide_point(*args[1].pos): root.mandar_id_widget2()
+                MDFillRoundFlatButton:
+                    text: 'CONFIRMAR'
+                    size_hint: 0.8, 0.08
+                    font_size: '18sp'
+                    background_normal: ''
+                    background_color: app.theme_cls.primary_color
+                    pos_hint: {'center_x': 0.5, 'y': 0.50}
+                    on_release: root.carregar_faturamento()
+                MDRaisedButton:
+                    id: botao_faturamento
+                    text: ''
+                    size_hint: 0.9, None
+                    opacity: 0
+                    height: "60dp"
+                    pos_hint: {'center_x': 0.5, 'y': 0.30}
+
+                
+
+                    
