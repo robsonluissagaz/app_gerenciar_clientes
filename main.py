@@ -16,10 +16,19 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.list import ThreeLineListItem
 from kivy.properties import StringProperty
 from kivy.clock import Clock
+from kivy.utils import platform
+import os
+import os
+from kivy.utils import platform
+if platform == 'android':
+    from android.storage import app_storage_path
+    DB_PATH = os.path.join(app_storage_path(), "banco.db")
+else:
+    DB_PATH = "banco.db"
 
 # ------------------ Banco de Dados ------------------ #
 def iniciar_banco():
-    con = sqlite3.connect("app.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS ordens (
@@ -30,7 +39,7 @@ def iniciar_banco():
             data DATETIME,
             telefone TEXT,
             pago TEXT,
-            competencia DATETIME GENERATED ALWAYS AS (strftime('%Y-%m', data) || '-01') STORED,
+            competencia DATETIME,
             descricao TEXT,
             valor REAL
         )
@@ -38,13 +47,16 @@ def iniciar_banco():
     con.commit()
     con.close()
 
+#Função que salve uma ordem de serviço no banco de dados
 def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
-    con = sqlite3.connect("app.db")
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     data_datetime = datetime.strptime(data, "%d/%m/%Y %H:%M")
+    competencia = data_datetime.replace(day=1).date()
+    # Insere no banco
     cur.execute("""
-        INSERT INTO ordens (tipo, nome_cliente, endereco, data, telefone, pago, descricao, valor)
-        VALUES (?,?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ordens (tipo, nome_cliente, endereco, data, telefone, pago, competencia, descricao, valor)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         tipo,
         nome,
@@ -52,6 +64,7 @@ def salvar_ordem(tipo, nome, endereco, data, telefone, pago, descricao, valor):
         data_datetime,
         telefone,
         pago,
+        competencia,
         descricao,
         float(valor) if valor else 0.0
     ))
@@ -81,7 +94,7 @@ class TelaInicio(Screen):
         
     #Função para carregar o faturamento do mês atual somando os valores das ordens pagas
     def carregar_faturamento_mes(self):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         mes_atual = datetime.now().month
         ano_atual = datetime.now().year
@@ -332,7 +345,7 @@ class TelaServicosAtivos(Screen):
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%Y-%m-%d")
         self.ids.lista_servicos.clear_widgets()
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             SELECT id, nome_cliente, data, endereco, valor, pago
@@ -355,7 +368,7 @@ class TelaServicosAtivos(Screen):
             self.ids.lista_servicos.add_widget(item)
     #Função para abrir a tela de detalhes do serviço passando as informações da ordem selecionada
     def abrir_detalhes(self, id_ordem):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             select * from ordens where id = ?
@@ -380,7 +393,7 @@ class TelaDescricaoServicos(Screen):
 
     
     def editar_servico(self):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             select * from ordens where id = ?
@@ -421,7 +434,7 @@ class TelaDescricaoServicos(Screen):
     def executar_cancelamento(self):
         # Fecha o popup de confirmação primeiro
         self.dialog_confirmar.dismiss()
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("DELETE FROM ordens WHERE id = ?", (self.id_real,))
         con.commit()
@@ -460,7 +473,7 @@ class TelaEditarServico(Screen):
 
     #Função para salvar as alterações do serviço editado no banco de dados
     def salvar_alteracoes(self):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             UPDATE ordens
@@ -519,7 +532,7 @@ class TelaServicosFinalizados(Screen):
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%Y-%m-%d")
         self.ids.lista_servicos_finalizados.clear_widgets()
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             SELECT id, nome_cliente, data, endereco, valor, pago
@@ -540,7 +553,7 @@ class TelaServicosFinalizados(Screen):
             self.ids.lista_servicos_finalizados.add_widget(item)
     
     def abrir_detalhes(self, id_ordem):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             select * from ordens where id = ?
@@ -562,7 +575,7 @@ class TelaServicosNaoPagos(Screen):
     def carregar_servicos(self):
         dia_atual = datetime.now().strftime("%Y-%m-%d")
         self.ids.lista_servicos_nao_pagos.clear_widgets()
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             SELECT id, nome_cliente, data, endereco, valor, pago
@@ -584,7 +597,7 @@ class TelaServicosNaoPagos(Screen):
             self.ids.lista_servicos_nao_pagos.add_widget(item)
     
     def abrir_detalhes(self, id_ordem):
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             select * from ordens where id = ?
@@ -621,12 +634,13 @@ class TelaGerenciadorDeFinancas(Screen):
         from datetime import datetime
         data_inicio = datetime.strptime(data_inicio, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
         data_fim = datetime.strptime(data_fim, "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
-        con = sqlite3.connect("app.db")
+        con = sqlite3.connect(DB_PATH)
         cur = con.cursor()
         cur.execute("""
             SELECT SUM(valor)
             FROM ordens
-            WHERE data BETWEEN ? AND ?
+            WHERE data >= ?
+            and data <=?
             AND pago = 'SIM'
         """, (data_inicio, data_fim))
         total = cur.fetchone()[0]
@@ -639,9 +653,12 @@ class TelaGerenciadorDeFinancas(Screen):
 #Configuração do aplicativo
 class MeuAplicativo(MDApp):
     def build(self):
-        iniciar_banco()
         self.theme_cls.primary_palette = "Blue"
         return Builder.load_file("tela.kv")
+    
+    def on_start(self):
+        iniciar_banco()
+
     #Fechar o aplicativo
     def fechar_aplicativo(self):
         self.stop()
