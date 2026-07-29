@@ -1,6 +1,8 @@
 MeuGerenciador:
     TelaInicio:
-    GerarServico:
+    TelaCadastrarCliente:
+    TelaProcurarCliente:
+    TelaGerarServico:
     TelaValorCobrado:
     TelaServicosAtivos:
     TelaDescricaoServicos:
@@ -9,6 +11,9 @@ MeuGerenciador:
     TelaServicosFinalizados:
     TelaServicosNaoPagos:
     TelaGerenciadorDeFinancas:
+    TelaGerarCobranca:
+    TelaBackUp:
+    
 
 <TelaInicio>:
     canvas.before:
@@ -24,8 +29,29 @@ MeuGerenciador:
             text: ''
             size_hint: 0.9, None
             height: "60dp"
-            pos_hint: {'center_x': 0.5, 'y': 0.80}
+            pos_hint: {'center_x': 0.5, 'y': 0.90}
             on_release: root.manager.current = 'tela_gerenciamento_financas'
+        MDFillRoundFlatIconButton:
+            id: botao_backup
+            text: "Backup"
+            icon: "google-drive"
+            size_hint: None, None
+            width: "120dp"
+            height: "36dp"
+            pos_hint: {"right": 0.97, "top": 0.87}
+            md_bg_color: 1, 1, 1, 0
+            line_color: app.theme_cls.primary_color
+            text_color: app.theme_cls.primary_color
+            icon_color: app.theme_cls.primary_color
+            on_release: root.manager.current = 'tela_backup'
+        MDFillRoundFlatButton:
+            text: 'CADASTRAR CLIENTE'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
+            pos_hint: {'center_x': 0.5, 'y': 0.70}
+            on_release: root.manager.current = 'cadastrar_cliente'
         MDFillRoundFlatButton:
             text: 'GERAR SERVIÇO'
             size_hint: 0.8, 0.08
@@ -33,7 +59,7 @@ MeuGerenciador:
             background_normal: ''
             background_color: app.theme_cls.primary_color
             pos_hint: {'center_x': 0.5, 'y': 0.60}
-            on_release: root.manager.current = 'gerar_servico'
+            on_release: root.manager.current = 'procurar_cliente'
         MDFillRoundFlatButton:
             text: 'SERVIÇOS ATIVOS'
             size_hint: 0.8, 0.08
@@ -59,14 +85,97 @@ MeuGerenciador:
             pos_hint: {'center_x': 0.5, 'y': 0.30}
             on_release: root.manager.current = 'tela_servicos_nao_pagos'
         MDFillRoundFlatButton:
+            text: 'GERAR COBRANÇA'
+            size_hint: 0.8, 0.08
+            font_size: '18sp'
+            background_normal: ''
+            background_color: app.theme_cls.primary_color
+            pos_hint: {'center_x': 0.5, 'y': 0.20}
+            on_release: root.manager.current = 'gerar_cobranca'
+        MDFillRoundFlatButton:
             text: 'SAIR'
             size_hint: 0.3, 0.08
             font_size: '18sp'
             md_bg_color: 0.8, 0, 0, 1
-            pos_hint: {'center_x': 0.5, 'y': 0.15}
+            pos_hint: {'center_x': 0.5, 'y': 0.05}
             on_release: app.fechar_aplicativo()
 
-<GerarServico>:
+<TelaCadastrarCliente>:
+    name: 'cadastrar_cliente'
+    MDScreen:
+        MDBoxLayout:
+            id: widgets_cadastrar_cliente
+            orientation: "vertical"
+            MDTopAppBar:
+                title: "CADASTRAR CLIENTE"
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+                size_hint_y: None
+                height: "56dp"
+            ScrollView:
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: "15dp"
+                    padding: "20dp"
+                    size_hint_y: None
+                    height: self.minimum_height
+                    TextInput:
+                        id: nome_cliente
+                        hint_text: 'NOME DO CLIENTE'
+                        multiline: False
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                    TextInput:
+                        id: numero_contato
+                        hint_text: 'NÚMERO PARA CONTATO'
+                        multiline: False
+                        size_hint_y: None
+                        height: "48dp"
+                        font_size: '18sp'
+                        input_filter: 'int'
+                        input_type: 'number'
+                    TextInput:
+                        id: endereco
+                        hint_text: 'ENDEREÇO'
+                        multiline: True
+                        size_hint_y: None
+                        height: "80dp"
+                        font_size: '18sp'
+                    MDRaisedButton:
+                        text: "CONFIRMAR"
+                        size_hint_y: None
+                        height: "48dp"
+                        on_release: root.cadastrar_cliente()
+
+<TelaProcurarCliente>:
+    name: "procurar_cliente"
+    MDScreen:
+        MDBoxLayout:
+            orientation: "vertical"
+            MDTopAppBar:
+                title: "BUSCAR CLIENTE"
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+            Widget:
+                size_hint_y: None
+                height: "40dp"
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: "100dp"
+                padding: "10dp"
+                spacing: "10dp"
+                MDTextField:
+                    id: nome_cliente
+                    hint_text: "Digite o nome do cliente"
+                MDRaisedButton:
+                    text: "BUSCAR"
+                    pos_hint: {"center_x": 0.5}
+                    on_release: root.buscar_cliente()
+            ScrollView:
+                MDList:
+                    id: lista_clientes
+
+<TelaGerarServico>:
     name: 'gerar_servico'
     MDScreen:
         MDBoxLayout:
@@ -74,7 +183,7 @@ MeuGerenciador:
             orientation: "vertical"
             MDTopAppBar:
                 title: "CADASTRAR SERVIÇO"
-                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "procurar_cliente")]]
                 size_hint_y: None
                 height: "56dp"
             ScrollView:
@@ -315,6 +424,13 @@ MeuGerenciador:
                 height: "50dp"
                 pos_hint: {"center_x": 0.5}
                 on_release: root.cancelar_servico()
+            MDRaisedButton:
+                text: "COMPARTILHAR"
+                md_bg_color: 0, 0.8, 0.2, 1
+                size_hint: 0.8, None
+                height: "50dp"
+                pos_hint: {"center_x": 0.5}
+                on_release: root.compartilhar_texto()
 
 <TelaEditarServico>:
     name: 'editar_servico'
@@ -473,6 +589,151 @@ MeuGerenciador:
                     height: "60dp"
                     pos_hint: {'center_x': 0.5, 'y': 0.30}
 
-                
+<TelaGerarCobranca>:
+    name: "gerar_cobranca"
+    MDScreen:
+        MDBoxLayout:
+            orientation: "vertical"
+            MDTopAppBar:
+                title: "GERAR COBRANÇA"
+                left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+            Widget:
+                size_hint_y: None
+                height: "40dp"
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_y: None
+                height: "100dp"
+                padding: "10dp"
+                spacing: "10dp"
+                MDTextField:
+                    id: nome_cliente
+                    hint_text: "Digite o nome do cliente"
+                MDRaisedButton:
+                    text: "BUSCAR"
+                    pos_hint: {"center_x": 0.5}
+                    on_release: root.buscar_cliente()
+            ScrollView:
+                MDList:
+                    id: lista_clientes
 
-                    
+<TelaBackUp>:
+    name: "tela_backup"
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    MDBoxLayout:
+        orientation: "vertical"
+        MDTopAppBar:
+            title: "ÁREA DE BACKUP"
+            elevation: 4
+            left_action_items:
+                [["arrow-left", lambda x: setattr(app.root, "current", "tela_inicio")]]
+        ScrollView:
+            MDBoxLayout:
+                orientation: "vertical"
+                padding: "20dp"
+                spacing: "15dp"
+                size_hint_y: None
+                height: self.minimum_height
+                MDCard:
+                    orientation: "vertical"
+                    padding: "15dp"
+                    spacing: "8dp"
+                    size_hint_y: None
+                    height: "110dp"
+                    radius: [18, 18, 18, 18]
+                    elevation: 3
+                    MDIcon:
+                        icon: "database"
+                        halign: "center"
+                        theme_text_color: "Primary"
+                        font_size: "32sp"
+                    MDLabel:
+                        id: label_status_backup
+                        text: "Nenhum backup local encontrado."
+                        markup: True
+                        halign: "center"
+                        adaptive_height: True
+                MDCard:
+                    orientation: "vertical"
+                    padding: "15dp"
+                    spacing: "12dp"
+                    size_hint_y: None
+                    height: "145dp"
+                    radius: [18, 18, 18, 18]
+                    elevation: 3
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: "12dp"
+                        adaptive_height: True
+
+                        MDIcon:
+                            icon: "google-drive"
+                            font_size: "34sp"
+                            size_hint_x: None
+                            width: "45dp"
+                            halign: "center"
+                            theme_text_color: "Primary"
+
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            adaptive_height: True
+
+                            MDLabel:
+                                text: "CONTA DO GOOGLE DRIVE"
+                                bold: True
+                                adaptive_height: True
+
+                            MDLabel:
+                                text: root.google_email if root.google_conectado else "Nenhuma conta conectada"
+                                theme_text_color: "Custom"
+                                text_color: (0.1, 0.55, 0.2, 1) if root.google_conectado else (0.45, 0.45, 0.45, 1)
+                                adaptive_height: True
+                                shorten: True
+                                shorten_from: "right"
+
+                        MDIconButton:
+                            icon: "logout"
+                            disabled: not root.google_conectado
+                            opacity: 1 if root.google_conectado else 0
+                            theme_text_color: "Custom"
+                            text_color: (0.9, 0.1, 0.1, 1)
+                            on_release: root.confirmar_desconexao_google()
+
+                    MDFillRoundFlatIconButton:
+                        id: botao_google_drive
+                        text: "GOOGLE DRIVE CONECTADO" if root.google_conectado else "CONECTAR AO GOOGLE DRIVE"
+                        icon: "check-circle" if root.google_conectado else "google-drive"
+                        disabled: root.google_conectado
+                        size_hint_x: 0.95
+                        size_hint_y: None
+                        height: "48dp"
+                        pos_hint: {"center_x": 0.5}
+                        on_release: root.conectar_google_drive()
+                MDFillRoundFlatIconButton:
+                    text: "REALIZAR BACKUP"
+                    icon: "database-plus"
+                    size_hint_x: 0.9
+                    size_hint_y: None
+                    height: "52dp"
+                    pos_hint: {"center_x": 0.5}
+                    on_release: root.fazer_backup()
+                MDLabel:
+                    text: "BACKUPS DISPONÍVEIS"
+                    bold: True
+                    halign: "center"
+                    adaptive_height: True
+                MDCard:
+                    orientation: "vertical"
+                    size_hint_y: None
+                    height: "350dp"
+                    radius: [15, 15, 15, 15]
+                    elevation: 2
+                    ScrollView:
+                        MDList:
+                            id: lista_backups
